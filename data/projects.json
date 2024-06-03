@@ -8,6 +8,22 @@
             "iconUrl": "/projects/atlassian-logo.webp",
             "imageUrl": "/projects/eslint-page.png",
             "tags": ["frontend", "framework", "platform"]
+        },
+        {
+            "id": "2",
+            "name": "Media Library",
+            "description": "Collaborated with software engineers, user experience designers, and product managers to develop a mobile application, OneView, delivering crucial cinema exhibition statistics to executives and leaders in partnership with Vista, Numero, and Movio in 2023. Successfully showcased the OneView application at CinemaCon 2023, demonstrating its significance and impact.",
+            "company": "Vista Group",
+            "iconUrl": "/projects/vista-logo.png",
+            "tags": ["frontend", "backend", "cloud", "cloudflare"]
+        },
+        {
+            "id": "3",
+            "name": "Capture The Bug",
+            "description": "Led a team of 7 SWE students in collaboration with Security Lit to enhance the Capture the Bug platform as the Design Team Lead in 2023. Developed and implemented a research-based comprehensive design system through usability interviews, literature reviews, and user domain research. Created unit tests on the backend, identifying server-side vulnerabilities, and actively contributed to improving the overall security posture of the system",
+            "company": "Security Lit",
+            "iconUrl": "/projects/security-lit-logo.png",
+            "tags": ["frontend", "design", "UI/UX"]
         }
     ]
 }

@@ -26,7 +26,7 @@ const HeroBanner = (props: Props) => {
           height={200}
           width={200}
           className="z-50 absolute left-[200px] top-40"
-          src="/profilePic.png"
+          src="/zerosicx/profilePic.png"
           alt="profile image"
           style={{ height: "150px", width: "150px" }}
         ></Image>
@@ -44,7 +44,7 @@ const HeroBanner = (props: Props) => {
           height={200}
           width={200}
           className="z-50"
-          src="/profilePic.png"
+          src="/zerosicx/profilePic.png"
           alt="profile image"
           style={{ height: "150px", width: "150px" }}
         ></Image>

@@ -20,7 +20,7 @@ const NavBar = (props: Props) => {
         <Image
           width={100}
           height={100}
-          src="zerosicx/profilePic.png"
+          src="/zerosicx/profilePic.png"
           alt="profile-image"
           style={{ height: "45px", width: "auto" }}
         />

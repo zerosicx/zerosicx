@@ -19,6 +19,17 @@ export default function Home() {
           </p>
         </section>
         <section className="mb-5 mt-3">
+          <h1 className="text-2xl font-semibold mb-5">📝 Pages</h1>
+          <div className="w-full flex flex-row flex-wrap gap-10 justify-between">
+            <p className="hover:bg-neutral-200 rounded-sm px-4">🚀 Projects</p>
+            <p className="hover:bg-neutral-200 rounded-sm px-4">
+              💼 Experience
+            </p>
+            <p className="hover:bg-neutral-200 rounded-sm px-4">☎️ Contact</p>
+            <p className="hover:bg-neutral-200 rounded-sm px-4">📑 Blog</p>
+          </div>
+        </section>
+        <section className="mb-5 mt-3">
           <h1 className="text-2xl font-semibold mb-5">🚀 Project Highlight</h1>
           <div className="flex flex-row w-full justify-center">
             <ProjectSlideshow />

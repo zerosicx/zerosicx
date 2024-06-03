@@ -1,3 +1,4 @@
+"use client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import projectData from "../../data/projects.json";
 
 type ProjectDataType = {
@@ -19,12 +21,16 @@ type ProjectDataType = {
   iconUrl?: string;
   imageUrl?: string;
   tags: string[] | undefined;
-  actionLink?: string;
-  moreLink?: string;
+  link?: string;
 };
 
 export function ProjectSlideshow() {
   const projects: ProjectDataType[] = projectData.projects;
+  const router = useRouter();
+
+  const handleLearnMoreButton = (id: string) => {
+    router.push(`/projects/${id}`);
+  };
 
   return (
     <Carousel className="w-[80%]">
@@ -70,8 +76,17 @@ export function ProjectSlideshow() {
                         })}
                     </div>
                     <div className="flex flex-row gap-2">
-                      <Button>Learn More</Button>
-                      <Button variant="zerosicx">See in Action</Button>
+                      <Button onClick={() => handleLearnMoreButton(project.id)}>
+                        Learn More
+                      </Button>
+                      {project.link && (
+                        <Button
+                          variant="zerosicx"
+                          onClick={() => router.push(project.link || "")}
+                        >
+                          See in Action
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

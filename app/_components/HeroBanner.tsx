@@ -16,10 +16,10 @@ const HeroBanner = (props: Props) => {
       <section
         className={cn(
           sacramentoFont.className,
-          "bg-[url(/hero-bg.jpeg)] bg-cover h-[20vh] w-full flex flex-col items-center justify-center hidden lg:flex"
+          "bg-[url(/hero-bg.jpeg)] bg-cover h-[30vh] w-full flex flex-col items-center justify-center hidden lg:flex"
         )}
       >
-        <h1 className="text-4xl text-white text-center mb-2 absolute left-[375px] top-[190px]">
+        <h1 className="text-4xl text-white text-center mb-2 absolute left-[375px] top-[200px]">
           <span>I&apos;m Hannah</span>
         </h1>
         <Image

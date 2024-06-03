@@ -11,7 +11,7 @@ const NavBar = (props: Props) => {
   return (
     <nav
       className={cn(
-        "h-[60px] w-full flex flex-row items-center justify-between z-50 bg-background sticky top-0 p-5 md:p-0",
+        "h-[60px] w-full flex flex-row items-center justify-between z-[9999] bg-background sticky top-0 p-5 lg:p-0",
         scrolled && "border-b shadow-sm"
       )}
     >

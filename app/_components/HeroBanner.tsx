@@ -16,7 +16,7 @@ const HeroBanner = (props: Props) => {
       <section
         className={cn(
           sacramentoFont.className,
-          "bg-[url(/hero-bg.jpeg)] bg-cover h-[25vh] w-full flex flex-col items-center justify-center hidden lg:block"
+          "bg-[url(/hero-bg.jpeg)] bg-cover h-[25vh] w-full flex flex-col items-center justify-center hidden md:block"
         )}
       >
         <h1 className="text-4xl text-white text-center mb-2 absolute left-[375px] top-[200px]">
@@ -34,7 +34,7 @@ const HeroBanner = (props: Props) => {
       <section
         className={cn(
           sacramentoFont.className,
-          "lg:hidden bg-[url(/hero-bg.jpeg)] bg-cover h-[30vh] w-full flex flex-col items-center justify-center"
+          "md:hidden bg-[url(/hero-bg.jpeg)] bg-cover h-[30vh] w-full flex flex-col items-center justify-center"
         )}
       >
         <h1 className="text-4xl text-white text-center mb-2">

@@ -3,7 +3,7 @@
         {
             "id": "1",
             "name": "Design System ESLint Plugin",
-            "description": "Developed the Design System ESLint plugin: ensuring consistent CSS-in-JS styling for front-end components within the Atlassian Frontend Monorepo",
+            "description": "Developed the Design System ESLint plugin: ensuring consistent CSS-in-JS styling for front-end components within the Atlassian Frontend Monorepo. Successfully deployed the project; currently active across various Atlassian frontend repositories, demonstrating its widespread adoption and impact within the organization",
             "company": "Atlassian",
             "iconUrl": "/projects/atlassian-logo.webp",
             "imageUrl": "/projects/eslint-page.png",

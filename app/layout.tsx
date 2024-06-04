@@ -3,6 +3,7 @@ import { Roboto_Flex as FontSans } from "next/font/google";
 import "./globals.css";
 
 import { cn } from "@/lib/utils";
+import ConvexClientProvider from "./ConvexClientProvider";
 
 const fontSans = FontSans({
   weight: "400",
@@ -22,14 +23,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={cn(
-          "min-h-screen bg-background font-sans antialiased lg:mx-40",
-          fontSans.className
-        )}
-      >
-        {children}
-      </body>
+      <ConvexClientProvider>
+        <body
+          className={cn(
+            "min-h-screen bg-background font-sans antialiased lg:mx-40",
+            fontSans.className
+          )}
+        >
+          {children}
+        </body>
+      </ConvexClientProvider>
     </html>
   );
 }

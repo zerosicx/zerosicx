@@ -7,3 +7,14 @@ export const getProjects = query({
     return projects;
   },
 });
+
+// Return personal projects
+export const getPersonalProjects = query({
+  handler: async (ctx) => {
+    const projects = await ctx.db
+      .query("projects")
+      .filter((q) => q.eq(q.field("company"), "zerosicx"))
+      .collect();
+    return projects;
+  },
+});

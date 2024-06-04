@@ -15,7 +15,7 @@ import { useQuery } from "convex/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-type ProjectDataType = {
+export type ProjectDataType = {
   _id: Id<"projects">;
   name: string;
   description: string;
@@ -26,10 +26,17 @@ type ProjectDataType = {
   link?: string;
 };
 
-export function ProjectSlideshow() {
+interface ProjectSlideshowProps {
+  config?: string;
+}
+
+export function ProjectSlideshow(props: ProjectSlideshowProps) {
   const projects: ProjectDataType[] | undefined = useQuery(
-    api.projects.getProjects
+    props.config === "personal"
+      ? api.projects.getPersonalProjects
+      : api.projects.getProjects
   );
+
   const router = useRouter();
 
   const handleLearnMoreButton = (id: Id<"projects">) => {
@@ -45,7 +52,7 @@ export function ProjectSlideshow() {
               <CarouselItem key={index}>
                 <div className="p-1">
                   <Card>
-                    <CardContent className="flex flex-row items-center p-6 gap-2">
+                    <CardContent className="flex flex-row items-center p-6 gap-2 flex-wrap md:flex-nowrap">
                       {project.imageUrl && (
                         <Image
                           width={250}

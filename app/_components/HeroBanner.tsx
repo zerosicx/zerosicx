@@ -8,11 +8,14 @@ const sacramentoFont = Sacramento({
   variable: "--font-cursive",
 });
 
-type Props = {};
+interface HeroBannerProps {
+  title: string;
+  imageUrl?: string;
+}
 
-const HeroBanner = (props: Props) => {
+const HeroBanner = (props: HeroBannerProps) => {
   return (
-    <section className="mb-[50px]">
+    <section className="md:mb-[100px]">
       <section
         className={cn(
           sacramentoFont.className,
@@ -20,16 +23,18 @@ const HeroBanner = (props: Props) => {
         )}
       >
         <h1 className="text-4xl text-white text-center mb-2 absolute left-[375px] top-[200px]">
-          <span>I&apos;m Hannah</span>
+          <span>{props.title}</span>
         </h1>
-        <Image
-          height={200}
-          width={200}
-          className="z-50 absolute left-[200px] top-40"
-          src="/profilePic.png"
-          alt="profile image"
-          style={{ height: "150px", width: "150px" }}
-        ></Image>
+        {props.imageUrl && (
+          <Image
+            height={200}
+            width={200}
+            className="z-50 absolute left-[200px] top-40"
+            src={props.imageUrl}
+            alt="profile image"
+            style={{ height: "150px", width: "150px" }}
+          ></Image>
+        )}
       </section>
       <section
         className={cn(
@@ -38,16 +43,18 @@ const HeroBanner = (props: Props) => {
         )}
       >
         <h1 className="text-4xl text-white text-center mb-2">
-          <span>I&apos;m Hannah</span>
+          <span>{props.title}</span>
         </h1>
-        <Image
-          height={200}
-          width={200}
-          className="z-50"
-          src="/profilePic.png"
-          alt="profile image"
-          style={{ height: "150px", width: "150px" }}
-        ></Image>
+        {props.imageUrl && (
+          <Image
+            height={200}
+            width={200}
+            className="z-50"
+            src={props.imageUrl}
+            alt="profile image"
+            style={{ height: "150px", width: "150px" }}
+          ></Image>
+        )}
       </section>
     </section>
   );

@@ -5,9 +5,12 @@ import { ProjectSlideshow } from "./_components/ProjectSlideshow";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col gap-2">
+    <main className="flex min-h-screen flex-col">
       <NavBar />
-      <HeroBanner></HeroBanner>
+      <HeroBanner
+        title={"I'm Hannah"}
+        imageUrl={"/profilePic.png"}
+      ></HeroBanner>
       <main className="px-5">
         <section className="mb-5 mt-3">
           <h1 className="text-2xl font-semibold mb-3">👩🏻‍💻 About Me</h1>
@@ -51,8 +54,6 @@ export default function Home() {
           </div>
         </section>
       </main>
-
-      {/* <h1 className="text-2xl">Hello World</h1> */}
     </main>
   );
 }

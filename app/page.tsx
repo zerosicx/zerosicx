@@ -1,3 +1,4 @@
+import Link from "next/link";
 import HeroBanner from "./_components/HeroBanner";
 import NavBar from "./_components/NavBar";
 import { ProjectSlideshow } from "./_components/ProjectSlideshow";
@@ -21,18 +22,26 @@ export default function Home() {
         <section className="mb-5 mt-3">
           <h1 className="text-2xl font-semibold mb-5">📝 Pages</h1>
           <div className="w-full flex flex-row flex-wrap gap-10 justify-between">
-            <p className="text-md hover:bg-neutral-200 rounded-sm px-4">
-              🚀 Projects
-            </p>
-            <p className="text-md hover:bg-neutral-200 rounded-sm px-4">
-              💼 Experience
-            </p>
-            <p className="text-md hover:bg-neutral-200 rounded-sm px-4">
-              ☎️ Contact
-            </p>
-            <p className="text-md hover:bg-neutral-200 rounded-sm px-4">
-              📑 Blog
-            </p>
+            <Link href="/projects">
+              <span className="text-md hover:bg-neutral-200 rounded-sm px-5 py-2">
+                🚀 Projects
+              </span>
+            </Link>
+            <Link href="/experience">
+              <span className="text-md hover:bg-neutral-200 rounded-sm px-5 py-2">
+                💼 Experience
+              </span>
+            </Link>
+            <Link href="contact">
+              <span className="text-md hover:bg-neutral-200 rounded-sm px-5 py-2">
+                ☎️ Contact
+              </span>
+            </Link>
+            <Link href="blog">
+              <span className="text-md hover:bg-neutral-200 rounded-sm px-5 py-2">
+                📑 Blog
+              </span>
+            </Link>
           </div>
         </section>
         <section className="mb-5 mt-3">

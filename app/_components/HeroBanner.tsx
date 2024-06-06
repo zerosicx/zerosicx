@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { scale } from "@cloudinary/url-gen/actions/resize";
 import { Sacramento } from "next/font/google";
 import Image from "next/image";
 import { cld } from "../CloudinaryProvider";
@@ -16,7 +17,10 @@ interface HeroBannerProps {
 
 const HeroBanner = (props: HeroBannerProps) => {
   // Get background image
-  const backgroundImg = cld.image("hero-bg_e7xlrz").toURL();
+  const backgroundImg = cld
+    .image("hero-bg_e7xlrz")
+    .resize(scale().width(500))
+    .toURL();
 
   return (
     <section className="md:mb-[100px]">

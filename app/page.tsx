@@ -1,3 +1,4 @@
+import { scale } from "@cloudinary/url-gen/actions/resize";
 import Link from "next/link";
 import HeroBanner from "./_components/HeroBanner";
 import NavBar from "./_components/NavBar";
@@ -6,7 +7,11 @@ import { cld } from "./CloudinaryProvider";
 
 export default function Home() {
   // Get profile pic
-  const profilePic = cld.image("profilePic_rubvv7").toURL();
+  const profilePic = cld
+    .image("profilePic_rubvv7")
+    .resize(scale().width(300))
+    .toURL();
+
   return (
     <main className="flex min-h-screen flex-col">
       <NavBar />

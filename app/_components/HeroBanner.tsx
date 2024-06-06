@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Sacramento } from "next/font/google";
 import Image from "next/image";
+import { cld } from "../CloudinaryProvider";
 
 const sacramentoFont = Sacramento({
   weight: "400",
@@ -14,13 +15,19 @@ interface HeroBannerProps {
 }
 
 const HeroBanner = (props: HeroBannerProps) => {
+  // Get background image
+  const backgroundImg = cld.image("hero-bg_e7xlrz").toURL();
+
   return (
     <section className="md:mb-[100px]">
       <section
         className={cn(
           sacramentoFont.className,
-          "bg-[url(/hero-bg.jpeg)] bg-cover h-[25vh] w-full flex flex-col items-center justify-center hidden md:block"
+          "bg-cover h-[25vh] w-full flex flex-col items-center justify-center hidden md:block"
         )}
+        style={{
+          backgroundImage: `url(${backgroundImg})`,
+        }}
       >
         <h1 className="text-4xl text-white text-center mb-2 absolute left-[375px] top-[200px]">
           <span>{props.title}</span>

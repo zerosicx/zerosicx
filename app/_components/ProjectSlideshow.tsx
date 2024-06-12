@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/carousel";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { getCloudinaryImageURL } from "@/lib/utils";
 import { useQuery } from "convex/react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export type ProjectDataType = {
@@ -54,21 +54,27 @@ export function ProjectSlideshow(props: ProjectSlideshowProps) {
                   <Card>
                     <CardContent className="flex flex-row items-center p-6 gap-2 flex-wrap md:flex-nowrap">
                       {project.imageUrl && (
-                        <Image
-                          width={250}
-                          height={250}
-                          src={project.imageUrl}
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={getCloudinaryImageURL({
+                            src: project.imageUrl,
+                            width: 500,
+                            quality: 100,
+                          })}
                           className="w-[40%] h-full bg-slate-600"
                           alt={`${project.name} image`}
-                        ></Image>
+                        ></img>
                       )}
                       <div className="flex flex-col gap-2">
                         <div className="flex flex-row gap-2 items-center">
                           {project.iconUrl && (
-                            <Image
-                              width={45}
-                              height={45}
-                              src={project.iconUrl}
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={getCloudinaryImageURL({
+                                src: project.iconUrl,
+                                width: 45,
+                                quality: 75,
+                              })}
                               alt={`${project.company} logo`}
                               className="w-4 h-4"
                             />

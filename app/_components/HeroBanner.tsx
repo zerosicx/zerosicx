@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { scale } from "@cloudinary/url-gen/actions/resize";
 import { Sacramento } from "next/font/google";
-import Image from "next/image";
 import { cld } from "../CloudinaryProvider";
 
 const sacramentoFont = Sacramento({
@@ -37,14 +36,12 @@ const HeroBanner = (props: HeroBannerProps) => {
           <span>{props.title}</span>
         </h1>
         {props.imageUrl && (
-          <Image
-            height={200}
-            width={200}
-            className="z-50 absolute left-[200px] top-40"
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className="z-50 h-[150px] w-[150px] absolute left-[200px] top-40"
             src={props.imageUrl}
             alt="profile image"
-            style={{ height: "150px", width: "150px" }}
-          ></Image>
+          ></img>
         )}
       </section>
       <section
@@ -57,14 +54,12 @@ const HeroBanner = (props: HeroBannerProps) => {
           <span>{props.title}</span>
         </h1>
         {props.imageUrl && (
-          <Image
-            height={200}
-            width={200}
-            className="z-50"
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className="z-50 h-[150px] w-[150px]"
             src={props.imageUrl}
             alt="profile image"
-            style={{ height: "150px", width: "150px" }}
-          ></Image>
+          ></img>
         )}
       </section>
     </section>

@@ -2,7 +2,6 @@
 import { useScrollTop } from "@/hooks/use-scroll-top";
 import { cn } from "@/lib/utils";
 import { scale } from "@cloudinary/url-gen/actions/resize";
-import Image from "next/image";
 import { cld } from "../CloudinaryProvider";
 
 type Props = {};
@@ -13,7 +12,7 @@ const NavBar = (props: Props) => {
   // Get profile pic
   const profilePic = cld
     .image("profilePic_rubvv7")
-    .resize(scale().width(50))
+    .resize(scale().width(100))
     .toURL();
 
   return (
@@ -25,13 +24,8 @@ const NavBar = (props: Props) => {
     >
       <h1 className="text-2xl font-bold">ZEROSICX</h1>
       <div>
-        <Image
-          width={100}
-          height={100}
-          src={profilePic}
-          alt="profile-image"
-          style={{ height: "45px", width: "auto" }}
-        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="h-[45px]" src={profilePic} alt="profile-image" />
       </div>
     </nav>
   );

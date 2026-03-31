@@ -59,9 +59,10 @@ canvas {
 /* ── Welcome title overlay ────────────────────── */
 #welcome-title {
   font-family: 'Pixelify Sans', cursive;
-  font-size: 2rem;
+  font-size: 5rem;
   font-weight: 700;
   color: #f9a8d4;
+  text-shadow: 3px 3px 0 #8a3a5e;
   position: fixed;
   top: 38%;
   left: 50%;

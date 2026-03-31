@@ -23,7 +23,7 @@ const DIALOGUES: Record<string, string[]> = {
 const OBJECTS = [
   { name: 'dresser',  x: 96,  y: 32 },
   { name: 'dresser',  x: 128, y: 32 },
-  { name: 'computer', x: 272, y: 48 },
+  { name: 'computer', x: 288, y: 144 },
   { name: 'bed',      x: 48,  y: 176 },
   { name: 'window',   x: 264, y: 8 },
   { name: 'clock',    x: 200, y: 8 },
@@ -207,10 +207,10 @@ export class BedroomScene extends Phaser.Scene {
     this.placeFurn(5, 1, FN.dresser);
     this.placeFurn(7, 1, FN.dresser);
 
-    // Computer desk: chair → table with painting "screen" on top
-    this.placeFurn(14, 2, FN.chair_right);
-    this.placeFurn(16, 2, FN.large_table);
-    this.placeFurn(16, 2, FN.painting_0_2);
+    // Computer desk: lower-right corner against the right wall
+    this.placeFurn(15, 8, FN.chair_right);
+    this.placeFurn(17, 8, FN.large_table);
+    this.placeFurn(17, 8, FN.painting_0_2);
 
     // Bed (pink, forward-facing — top + bottom)
     this.placeFurn(2, 9, FN.bed_forward_top_pink);
@@ -219,7 +219,7 @@ export class BedroomScene extends Phaser.Scene {
     // Decorative plants (1×)
     this.placeDecor(1, 2, FN.potted_small_flower);
     this.placeDecor(1, 7, FN.sprout);
-    this.placeDecor(17, 10, FN.sunflower);
+    this.placeDecor(17, 12, FN.sunflower);
 
     // Yuumi
     this.catSprite = this.add.sprite(200, 140, 'cat', 13).setScale(2);

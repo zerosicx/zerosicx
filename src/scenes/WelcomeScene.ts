@@ -5,7 +5,7 @@ const WELCOME_DIALOGUE: string[] = [
   "Oh! A visitor! Hi there \u{1F44B}",
   "Welcome to zerosicx \u2014 my little corner of the internet.",
   "This is my room. Feel free to look around!",
-  "Use the arrow keys to walk, or click somewhere and I'll head over.",
+  "Use the arrow keys to walk, or click somewhere and I'll give you a tour!",
   "Let me know if you find the cat. She's around here somewhere...",
 ];
 

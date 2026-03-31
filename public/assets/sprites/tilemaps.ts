@@ -331,5 +331,33 @@ export const Cat = {
     }
 } as const;
 
+export const Chests = {
+    sourceName: "Chest.png",
+    tileSize: { w: 16, h: 16 },
+    tiles: {
+        small_chest_open_top: { col: 10, row: 0, x: 160, y: 0, w: 16, h: 16 },
+        big_chest_open_top: { col: 13, row: 0, x: 208, y: 0, w: 16, h: 16 },
+        small_chest: { col: 1, row: 1, x: 16, y: 16, w: 16, h: 16 },
+        big_chest_left: { col: 3, row: 1, x: 48, y: 16, w: 16, h: 16 },
+        big_chest_middle: { col: 4, row: 1, x: 64, y: 16, w: 16, h: 16 },
+        big_chest_right: { col: 5, row: 1, x: 80, y: 16, w: 16, h: 16 },
+        small_chest_half_open: { col: 7, row: 1, x: 112, y: 16, w: 16, h: 16 },
+        small_chest_open: { col: 10, row: 1, x: 160, y: 16, w: 16, h: 16 },
+        big_chest_open: { col: 13, row: 1, x: 208, y: 16, w: 16, h: 16 },
+        small_chest_side_top: { col: 1, row: 3, x: 16, y: 48, w: 16, h: 16 },
+        big_chest_side_top: { col: 4, row: 3, x: 64, y: 48, w: 16, h: 16 },
+        small_chest_half_open_side_top: { col: 7, row: 3, x: 112, y: 48, w: 16, h: 16 },
+        big_chest_open_side_top: { col: 10, row: 3, x: 160, y: 48, w: 16, h: 16 },
+        small_chest_open_side_top: { col: 13, row: 3, x: 208, y: 48, w: 16, h: 16 },
+        small_chest_side: { col: 1, row: 4, x: 16, y: 64, w: 16, h: 16 },
+        big_chest_side_left: { col: 3, row: 4, x: 48, y: 64, w: 16, h: 16 },
+        big_chest_side: { col: 4, row: 4, x: 64, y: 64, w: 16, h: 16 },
+        small_chest_half_open_side: { col: 7, row: 4, x: 112, y: 64, w: 16, h: 16 },
+        big_chest_open_side: { col: 10, row: 4, x: 160, y: 64, w: 16, h: 16 },
+        small_chest_open_side: { col: 13, row: 4, x: 208, y: 64, w: 16, h: 16 },
+    }
+} as const;
+
+
 
 

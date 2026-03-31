@@ -43,6 +43,10 @@ export class BootScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16,
     });
+    this.load.spritesheet('chest', 'assets/sprites/Objects/Chest.png', {
+      frameWidth: 16,
+      frameHeight: 16,
+    });
 
     const bar = this.add.rectangle(160, 128, 0, 8, 0xf9a8d4);
     this.load.on('progress', (value: number) => {

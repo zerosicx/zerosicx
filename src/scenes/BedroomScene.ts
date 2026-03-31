@@ -8,14 +8,21 @@ import { loadProjects, Project } from '../data/content-loader';
 const DIALOGUES: Record<string, string[]> = {
   cat:      ["Mrow.", "...she stares at you judgementally.", "(adorable)"],
   bed:      ["Zzz... not right now.", "There are things to explore first."],
-  dresser:  ["Some well-worn books and a few trinkets.", "The organised chaos of a developer."],
+  dresser:  [
+    "A stack of things I'm into right now...",
+    "Pixel art: 'The ONLY Pixel Art Guide You Need' by Juniper Dev.",
+    "I've watched it three times. Don't judge me.",
+    "Also grinding through Shin Kanzen Master N3.",
+    "I want to go to Japan again... spring would be perfect.",
+    "Cherry blossoms and konbini onigiri. A girl can dream.",
+  ],
   window:   ["Sunlight filters through the curtains.", "A good day to make something."],
 };
 
 // ─── Interaction hotspots ────────────────────────────────────────────────────
 const OBJECTS = [
-  { name: 'dresser',  x: 64,  y: 32 },
-  { name: 'dresser',  x: 144, y: 32 },
+  { name: 'dresser',  x: 96,  y: 32 },
+  { name: 'dresser',  x: 128, y: 32 },
   { name: 'computer', x: 272, y: 48 },
   { name: 'bed',      x: 48,  y: 176 },
   { name: 'window',   x: 264, y: 8 },
@@ -112,6 +119,8 @@ export class BedroomScene extends Phaser.Scene {
     this.dialogueIndex = 0;
 
     this.computerPanel = new ComputerPanel();
+    const label = document.getElementById('scene-label');
+    if (label) label.textContent = 'bedroom';
     this.drawRoom();
 
     const spawnY = data?.from === 'garden' ? DOOR_REENTRY_Y : 160;
@@ -189,14 +198,14 @@ export class BedroomScene extends Phaser.Scene {
       .setOrigin(0, 0);
 
     // ── Wall decorations (1× so they sit within the 16 px wall) ─────────
-    this.placeDecor(3, 0, FN.painting_0_0);
+    this.placeDecor(5, 0, FN.painting_0_0);
     this.placeDecor(8, 0, FN.painting_0_1);
     this.placeDecor(12, 0, FN.large_hanging_clock);
 
     // ── Furniture (all 2×) ──────────────────────────────────────────────
-    // Dressers flush against the wall
-    this.placeFurn(3, 1, FN.dresser);
-    this.placeFurn(8, 1, FN.dresser);
+    // Dressers side by side, flush against the wall
+    this.placeFurn(5, 1, FN.dresser);
+    this.placeFurn(7, 1, FN.dresser);
 
     // Computer desk: chair → table with painting "screen" on top
     this.placeFurn(14, 2, FN.chair_right);
@@ -216,11 +225,6 @@ export class BedroomScene extends Phaser.Scene {
     this.catSprite = this.add.sprite(200, 140, 'cat', 13).setScale(2);
     this.catSprite.play('cat-idle-forward');
 
-    this.add.text(4, 226, 'bedroom', {
-      fontFamily: 'monospace',
-      fontSize: '8px',
-      color: '#c084a0',
-    }).setResolution(3);
   }
 
   private placeTile(col: number, row: number, frame: number) {

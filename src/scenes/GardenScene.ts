@@ -43,7 +43,8 @@ const D = {
 
 const DOOR_COL = 10;
 const DOOR_CENTER_X = DOOR_COL * TILE + TILE / 2;
-const DOOR_CENTER_Y = TILE / 2;
+const DOOR_ROW = 1;
+const DOOR_CENTER_Y = DOOR_ROW * TILE + TILE / 2;
 const DOOR_RANGE_FAR = 48;
 const DOOR_RANGE_NEAR = 32;
 
@@ -85,6 +86,14 @@ const TAG_FLOWERS: Record<string, number> = {
   reading:     GB.sproutlings,
 };
 
+// Chest frame indices (15 cols — 240px / 16)
+const CHEST_COLS = 15;
+const CH = {
+  small_closed:    1 * CHEST_COLS + 1,
+  small_half_open: 1 * CHEST_COLS + 7,
+  small_open:      1 * CHEST_COLS + 10,
+} as const;
+
 /**
  * GardenScene
  * Blog section. Each article = one flower sprite.
@@ -98,6 +107,8 @@ export class GardenScene extends Phaser.Scene {
   private articlePanel!: ArticlePanel;
   private articles: Article[] = [];
   private flowerObjects: { sprite: Phaser.GameObjects.Image; article: Article }[] = [];
+  private chestSprite!: Phaser.GameObjects.Image;
+  private chestOpen = false;
   private lastNearArticle: Article | null = null;
 
   constructor() {
@@ -107,6 +118,8 @@ export class GardenScene extends Phaser.Scene {
   async create(data?: { from?: 'bedroom' }) {
     this.articlePanel = new ArticlePanel();
     this.dialogue = new DialogueSystem();
+    const label = document.getElementById('scene-label');
+    if (label) label.textContent = 'garden';
     this.articles = [];
     this.flowerObjects = [];
     this.lastNearArticle = null;
@@ -119,8 +132,6 @@ export class GardenScene extends Phaser.Scene {
       minX: 30, maxX: 286, minY: 18, maxY: 206,
     });
 
-    this.input.keyboard?.on('keydown-SPACE', () => this.tryInteractSignpost());
-    this.input.keyboard?.on('keydown-ENTER', () => this.tryInteractSignpost());
 
     try {
       this.articles = await loadArticles();
@@ -152,6 +163,30 @@ export class GardenScene extends Phaser.Scene {
       this.scene.start('BedroomScene', { from: 'garden' });
     }
 
+    // Chest proximity → show recent articles
+    const chestCX = this.chestSprite.x + 8;
+    const chestCY = this.chestSprite.y + 8;
+    const chestDist = Phaser.Math.Distance.Between(this.player.x, this.player.y, chestCX, chestCY);
+    if (chestDist < 28) {
+      this.chestSprite.setFrame(CH.small_open);
+      if (!this.chestOpen) {
+        this.chestOpen = true;
+        this.articlePanel.showRecent(this.articles.slice(0, 5));
+      }
+    } else if (chestDist < 40) {
+      this.chestSprite.setFrame(CH.small_half_open);
+      if (this.chestOpen) {
+        this.chestOpen = false;
+        this.articlePanel.hide();
+      }
+    } else {
+      this.chestSprite.setFrame(CH.small_closed);
+      if (this.chestOpen) {
+        this.chestOpen = false;
+        this.articlePanel.hide();
+      }
+    }
+
     this.updateProximityPanel();
   }
 
@@ -164,9 +199,6 @@ export class GardenScene extends Phaser.Scene {
       this.placeGrass(col, 0, G.grass_top);
     }
     this.placeGrass(COLS - 1, 0, G.grass_top_right);
-    this.doorSprite = this.add
-      .image(DOOR_COL * TILE, 0, 'doors', D.door_closed)
-      .setOrigin(0, 0);
 
     for (let row = 1; row < ROWS - 1; row++) {
       this.placeGrass(0, row, G.grass_left);
@@ -187,6 +219,11 @@ export class GardenScene extends Phaser.Scene {
       this.placeGrass(col, ROWS - 1, G.grass_bottom);
     }
     this.placeGrass(COLS - 1, ROWS - 1, G.grass_bottom_right);
+
+    // ── Door (placed after grass so it's not covered) ─────────────────
+    this.doorSprite = this.add
+      .image(DOOR_COL * TILE, DOOR_ROW * TILE, 'doors', D.door_closed)
+      .setOrigin(0, 0);
 
     // ── Fences (full perimeter with door gap at top) ───────────────────
     // Top: left section → gap at DOOR_COL → right section
@@ -219,16 +256,11 @@ export class GardenScene extends Phaser.Scene {
       this.add.image(col * TILE, row * TILE, 'grass-biome', frame).setOrigin(0, 0);
     }
 
-    // ── Signpost ──────────────────────────────────────────────────────────
-    this.add.rectangle(70, 55, 8, 24, 0x92400e);
-    this.add.rectangle(80, 48, 24, 12, 0xd97706);
-    this.add.text(68, 43, '\u{1F4CB}', { fontSize: '8px' }).setResolution(3);
+    // ── Recent articles chest ──────────────────────────────────────────
+    this.chestSprite = this.add
+      .image(4 * TILE, 2 * TILE, 'chest', CH.small_closed)
+      .setOrigin(0, 0);
 
-    this.add.text(4, 226, 'garden', {
-      fontFamily: 'monospace',
-      fontSize: '8px',
-      color: '#2d6a4f',
-    }).setResolution(3);
   }
 
   private placeGrass(col: number, row: number, frame: number) {
@@ -247,11 +279,11 @@ export class GardenScene extends Phaser.Scene {
       const y = 80 + row * 30;
 
       const frame = TAG_FLOWERS[article.tags[0]] ?? GB.small_sunflower;
-      const sprite = this.add.image(x, y, 'grass-biome', frame)
+      const flowerSprite = this.add.image(x, y, 'grass-biome', frame)
         .setInteractive({ useHandCursor: true })
         .on('pointerdown', () => this.articlePanel.show(article));
 
-      this.flowerObjects.push({ sprite, article });
+      this.flowerObjects.push({ sprite: flowerSprite, article });
     });
   }
 
@@ -279,10 +311,4 @@ export class GardenScene extends Phaser.Scene {
     }
   }
 
-  private tryInteractSignpost() {
-    const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, 70, 55);
-    if (dist < 32) {
-      this.articlePanel.showRecent(this.articles.slice(0, 5));
-    }
-  }
 }

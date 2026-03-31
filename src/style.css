@@ -14,15 +14,27 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  font-family: 'Pixelify Sans', cursive;
 }
 
 #app {
   position: relative;
-  width: min(960px, 100vw);
-  height: min(720px, 100vh);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 100vh;
+}
+
+#scene-label {
+  font-family: 'Pixelify Sans', cursive;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f9a8d4;
+  margin: 0 0 0.35rem;
+  height: 1rem;
 }
 
 /* ── Pixel-perfect canvas rendering ───────────── */
@@ -34,16 +46,26 @@ canvas {
 
 /* ── Dialogue box ──────────────────────────────── */
 #dialogue-box {
-  font-family: 'Courier New', Courier, monospace;
-  -webkit-font-smoothing: none;
-  font-smooth: never;
-  text-rendering: optimizeSpeed;
+  font-family: 'Pixelify Sans', cursive;
 }
 
 /* ── Content panels ────────────────────────────── */
-#article-panel,
-#project-panel {
-  font-family: system-ui, -apple-system, sans-serif;
+#article-panel {
+  font-family: 'Pixelify Sans', cursive;
   scrollbar-width: thin;
-  scrollbar-color: #f9a8d4 #1a0a1a;
+  scrollbar-color: #8a3a5e #fef3e2;
+}
+
+/* ── Welcome title overlay ────────────────────── */
+#welcome-title {
+  font-family: 'Pixelify Sans', cursive;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f9a8d4;
+  position: fixed;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 60;
+  pointer-events: none;
 }

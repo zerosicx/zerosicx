@@ -17,27 +17,31 @@ const WELCOME_DIALOGUE: string[] = [
 export class WelcomeScene extends Phaser.Scene {
   private dialogue!: DialogueSystem;
   private lineIndex = 0;
+  private titleEl: HTMLElement | null = null;
 
   constructor() {
     super({ key: 'WelcomeScene' });
   }
 
   create() {
-    // Dark background
     this.add.rectangle(160, 120, 320, 240, 0x1a0a1a);
 
-    // Subtle "zerosicx" title
-    this.add.text(160, 80, 'zerosicx', {
-      fontSize: '16px',
-      color: '#f9a8d4',
-      fontFamily: 'Courier New',
-      resolution: 3,
-    }).setOrigin(0.5);
+    // HTML title — crisp at any zoom, uses Pixelify Sans
+    const app = document.getElementById('app');
+    if (app) {
+      this.titleEl = document.createElement('h1');
+      this.titleEl.id = 'welcome-title';
+      this.titleEl.textContent = 'zerosicx';
+      app.appendChild(this.titleEl);
+    }
+
+    // Hide scene label during welcome
+    const label = document.getElementById('scene-label');
+    if (label) label.textContent = '';
 
     this.dialogue = new DialogueSystem();
     this.dialogue.show(WELCOME_DIALOGUE[0]);
 
-    // Advance on Space, Enter, or click
     this.input.keyboard?.on('keydown-SPACE', () => this.advance());
     this.input.keyboard?.on('keydown-ENTER', () => this.advance());
     this.input.on('pointerdown', () => this.advance());
@@ -59,6 +63,8 @@ export class WelcomeScene extends Phaser.Scene {
   private finish() {
     localStorage.setItem('zerosicx_visited', 'true');
     this.dialogue.hide();
+    this.titleEl?.remove();
+    this.titleEl = null;
     this.scene.start('BedroomScene');
   }
 }

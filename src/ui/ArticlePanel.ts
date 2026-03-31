@@ -3,30 +3,30 @@ import { Article } from '../data/content-loader';
 /**
  * ArticlePanel
  * HTML overlay panel (right-side) for showing article previews and full reads.
- * Styled with Tailwind CSS. Completely separate from the Phaser canvas.
+ * Pixel-art styled: 3-colour palette (parchment, dark brown, accent pink),
+ * hard borders, offset shadow.
  */
 export class ArticlePanel {
   private panel: HTMLElement | null = null;
 
-  /** Show a short preview (triggered by proximity to a flower) */
   showPreview(article: Article) {
     this.render(`
       <div class="flex flex-col gap-2">
-        <p class="text-xs text-pink-400 uppercase tracking-widest">
+        <p class="text-sm text-[#c2506a] uppercase tracking-widest font-bold">
           ${article.tags.join(' \u00b7 ')}
         </p>
-        <h2 class="text-base font-semibold text-gray-900 leading-snug">
+        <h2 class="text-lg font-bold text-[#2d1b0e] leading-snug">
           ${article.title}
         </h2>
-        <p class="text-xs text-gray-500">
+        <p class="text-sm text-[#7a5c3e]">
           ${article.date.toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
-        <div class="text-sm text-gray-700 line-clamp-4 mt-1">
+        <div class="text-base text-[#4a3728] line-clamp-4 mt-1 leading-relaxed">
           ${article.body}
         </div>
         <button
           id="read-more-btn"
-          class="mt-3 text-xs text-pink-500 hover:text-pink-700 underline underline-offset-2 text-left cursor-pointer"
+          class="mt-3 text-base text-[#c2506a] hover:text-[#a03050] font-bold text-left cursor-pointer"
         >
           Read more \u2192
         </button>
@@ -38,43 +38,44 @@ export class ArticlePanel {
     });
   }
 
-  /** Show the full article */
   show(article: Article) {
     this.render(`
       <div class="flex flex-col gap-3 h-full">
         <div class="flex items-start justify-between gap-2">
           <div>
-            <p class="text-xs text-pink-400 uppercase tracking-widest mb-1">
+            <p class="text-sm text-[#c2506a] uppercase tracking-widest font-bold mb-1">
               ${article.tags.join(' \u00b7 ')}
             </p>
-            <h2 class="text-lg font-semibold text-gray-900 leading-snug">
+            <h2 class="text-xl font-bold text-[#2d1b0e] leading-snug">
               ${article.title}
             </h2>
-            <p class="text-xs text-gray-400 mt-0.5">
+            <p class="text-sm text-[#7a5c3e] mt-0.5">
               ${article.date.toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
           <button id="close-panel-btn"
-            class="text-gray-400 hover:text-gray-700 text-lg leading-none cursor-pointer flex-shrink-0"
+            class="text-[#4a3728] hover:text-[#2d1b0e] text-lg leading-none cursor-pointer flex-shrink-0 font-bold"
             aria-label="Close"
           >\u2715</button>
         </div>
 
+        <div class="border-t-2 border-[#8a3a5e]/40 my-1"></div>
+
         <div
           id="article-body"
-          class="flex-1 overflow-y-auto text-sm text-gray-800 leading-relaxed prose prose-sm prose-pink max-w-none"
+          class="flex-1 overflow-y-auto text-base text-[#4a3728] leading-relaxed max-w-none"
         >
           ${article.body}
         </div>
 
         ${article.references.length > 0 ? `
-          <div class="border-t border-pink-100 pt-3">
-            <p class="text-xs font-medium text-gray-500 mb-1">References</p>
-            <ul class="text-xs text-pink-500 space-y-0.5">
+          <div class="border-t-2 border-[#8a3a5e]/40 pt-3">
+            <p class="text-sm font-bold text-[#7a5c3e] mb-1">References</p>
+            <ul class="text-sm text-[#c2506a] space-y-0.5">
               ${article.references.map(r => `
                 <li>
                   <a href="${r.url}" target="_blank" rel="noopener"
-                    class="hover:underline"
+                    class="hover:text-[#a03050]"
                   >${r.title}</a>
                 </li>
               `).join('')}
@@ -87,27 +88,26 @@ export class ArticlePanel {
     document.getElementById('close-panel-btn')?.addEventListener('click', () => this.hide());
   }
 
-  /** Show a list of recent articles (triggered by signpost) */
   showRecent(articles: Article[]) {
     this.render(`
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-widest">
-            \u{1F333} Latest from the garden
+          <h2 class="text-base font-bold text-[#2d1b0e] uppercase tracking-widest">
+            Latest from the garden
           </h2>
           <button id="close-panel-btn"
-            class="text-gray-400 hover:text-gray-700 cursor-pointer"
+            class="text-[#4a3728] hover:text-[#2d1b0e] cursor-pointer font-bold"
           >\u2715</button>
         </div>
         <ul class="flex flex-col gap-3">
           ${articles.map(a => `
-            <li class="border-b border-pink-100 pb-3">
-              <p class="text-xs text-pink-400">${a.date.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })}</p>
+            <li class="border-b-2 border-[#4a3728]/30 pb-3">
+              <p class="text-sm text-[#7a5c3e]">${a.date.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })}</p>
               <button
-                class="text-sm font-medium text-gray-900 hover:text-pink-600 text-left cursor-pointer article-link"
+                class="text-base font-bold text-[#2d1b0e] hover:text-[#c2506a] text-left cursor-pointer article-link"
                 data-slug="${a.slug}"
               >${a.title}</button>
-              <p class="text-xs text-gray-500 mt-0.5">${a.tags.join(', ')}</p>
+              <p class="text-sm text-[#7a5c3e] mt-0.5">${a.tags.join(', ')}</p>
             </li>
           `).join('')}
         </ul>
@@ -144,14 +144,13 @@ export class ArticlePanel {
     this.panel.id = 'article-panel';
     this.panel.className = [
       'fixed', 'top-4', 'right-4', 'bottom-4',
-      'w-80',
-      'bg-white/95', 'backdrop-blur-sm',
-      'border-2', 'border-pink-200',
-      'rounded-sm',
+      'w-96',
+      'bg-[#fef3e2]',
+      'border-4', 'border-[#a8607e]',
       'p-5',
       'z-40',
       'overflow-y-auto',
-      'shadow-xl',
+      'shadow-[4px_4px_0_#8a4a68]',
     ].join(' ');
 
     app.appendChild(this.panel);

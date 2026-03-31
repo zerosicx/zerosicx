@@ -1,5 +1,11 @@
-import matter from 'gray-matter';
+import { parse as parseYaml } from 'yaml';
 import { marked } from 'marked';
+
+function parseFrontmatter(raw: string): { data: Record<string, unknown>; content: string } {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+  if (!match) return { data: {}, content: raw };
+  return { data: parseYaml(match[1]) ?? {}, content: match[2] };
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -26,12 +32,12 @@ export interface Project {
 
 // ── File globs (resolved at build time by Vite) ───────────────────────────────
 
-const articleFiles = import.meta.glob('/content/articles/*.md', {
+const articleFiles = import.meta.glob<string>('/content/articles/*.md', {
   query: '?raw',
   import: 'default',
 });
 
-const projectFiles = import.meta.glob('/content/projects/*.md', {
+const projectFiles = import.meta.glob<string>('/content/projects/*.md', {
   query: '?raw',
   import: 'default',
 });
@@ -42,11 +48,11 @@ export async function loadArticles(): Promise<Article[]> {
   const results = await Promise.all(
     Object.entries(articleFiles).map(async ([path, loader]) => {
       const raw = (await loader()) as string;
-      const { data, content } = matter(raw);
+      const { data, content } = parseFrontmatter(raw);
       return {
         slug: path.replace(/.*\//, '').replace('.md', ''),
         title: (data.title as string) ?? 'Untitled',
-        date: new Date(data.date),
+        date: new Date(data.date as string),
         tags: (data.tags as string[]) ?? [],
         references: (data.references as { title: string; url: string }[]) ?? [],
         body: await marked(content),
@@ -61,7 +67,7 @@ export async function loadProjects(): Promise<Project[]> {
   const results = await Promise.all(
     Object.entries(projectFiles).map(async ([path, loader]) => {
       const raw = (await loader()) as string;
-      const { data, content } = matter(raw);
+      const { data, content } = parseFrontmatter(raw);
       return {
         slug: path.replace(/.*\//, '').replace('.md', ''),
         title: (data.title as string) ?? 'Untitled',

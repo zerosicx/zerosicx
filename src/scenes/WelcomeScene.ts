@@ -31,6 +31,7 @@ export class WelcomeScene extends Phaser.Scene {
       fontSize: '16px',
       color: '#f9a8d4',
       fontFamily: 'Courier New',
+      resolution: 3,
     }).setOrigin(0.5);
 
     this.dialogue = new DialogueSystem();

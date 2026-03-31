@@ -23,7 +23,8 @@ const OBJECTS = [
 ];
 
 const INTERACT_RANGE = 32;
-const DOOR_Y_THRESHOLD = 234; // walk south past this → garden
+const DOOR_Y_THRESHOLD = 228; // walk south past this → garden
+const DOOR_REENTRY_Y = 206; // spawn from garden near bedroom door
 
 /**
  * BedroomScene
@@ -45,11 +46,16 @@ export class BedroomScene extends Phaser.Scene {
     super({ key: 'BedroomScene' });
   }
 
-  create() {
+  create(data?: { from?: 'garden' }) {
+    this.inDialogue = false;
+    this.activeDialogue = [];
+    this.dialogueIndex = 0;
+
     this.drawRoom();
 
     // Player
-    this.player = this.add.rectangle(160, 160, 12, 16, 0xff90c0);
+    const spawnY = data?.from === 'garden' ? DOOR_REENTRY_Y : 160;
+    this.player = this.add.rectangle(160, spawnY, 12, 16, 0xff90c0);
     this.controller = new PlayerController(this, this.player);
     this.dialogue = new DialogueSystem();
 
@@ -64,8 +70,8 @@ export class BedroomScene extends Phaser.Scene {
     this.controller.update();
 
     // Transition to garden when player walks south through the door
-    if (this.player.y > DOOR_Y_THRESHOLD) {
-      this.scene.start('GardenScene');
+    if (this.player.y >= DOOR_Y_THRESHOLD) {
+      this.scene.start('GardenScene', { from: 'bedroom' });
     }
   }
 
@@ -92,6 +98,7 @@ export class BedroomScene extends Phaser.Scene {
     this.add.text(4, 226, 'bedroom \u2014 phase 1 placeholder', {
       fontSize: '5px',
       color: '#c084a0',
+      resolution: 3,
     });
   }
 

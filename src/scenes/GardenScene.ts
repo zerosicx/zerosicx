@@ -15,8 +15,9 @@ const FLOWER_EMOJIS: Record<string, string> = {
 };
 const DEFAULT_FLOWER = '\u{1F33C}'; // 🌼
 
-const DOOR_Y_THRESHOLD = 8; // walk north past this → bedroom
+const DOOR_Y_THRESHOLD = 22; // walk north past this → bedroom
 const PROXIMITY = 28;
+const GARDEN_ENTRY_Y = 28; // spawn from bedroom near top garden door
 
 /**
  * GardenScene
@@ -36,29 +37,39 @@ export class GardenScene extends Phaser.Scene {
     super({ key: 'GardenScene' });
   }
 
-  async create() {
-    this.articles = await loadArticles();
+  async create(data?: { from?: 'bedroom' }) {
     this.articlePanel = new ArticlePanel();
     this.dialogue = new DialogueSystem();
+    this.articles = [];
+    this.flowerObjects = [];
+    this.lastNearArticle = null;
 
     this.drawGarden();
-    this.placeFlowers();
 
-    // Player spawns at top (coming from bedroom door)
-    this.player = this.add.rectangle(160, 28, 12, 16, 0xff90c0);
+    const spawnY = data?.from === 'bedroom' ? GARDEN_ENTRY_Y : GARDEN_ENTRY_Y;
+    this.player = this.add.rectangle(160, spawnY, 12, 16, 0xff90c0);
     this.controller = new PlayerController(this, this.player);
 
     this.input.keyboard?.on('keydown-SPACE', () => this.tryInteractSignpost());
     this.input.keyboard?.on('keydown-ENTER', () => this.tryInteractSignpost());
+
+    try {
+      this.articles = await loadArticles();
+    } catch (error) {
+      console.error('?? Failed to load articles for garden:', error);
+    }
+
+    this.placeFlowers();
   }
 
   update() {
+    if (!this.controller || !this.player) return;
     this.controller.update();
 
     // Return to bedroom
-    if (this.player.y < DOOR_Y_THRESHOLD) {
+    if (this.player.y <= DOOR_Y_THRESHOLD) {
       this.articlePanel.hide();
-      this.scene.start('BedroomScene');
+      this.scene.start('BedroomScene', { from: 'garden' });
     }
 
     // Proximity article preview
@@ -91,6 +102,7 @@ export class GardenScene extends Phaser.Scene {
     this.add.text(4, 226, 'garden \u2014 phase 1 placeholder', {
       fontSize: '5px',
       color: '#6ee7b7',
+      resolution: 3,
     });
   }
 
@@ -103,7 +115,7 @@ export class GardenScene extends Phaser.Scene {
       const y = 80 + row * 30;
 
       const emoji = FLOWER_EMOJIS[article.tags[0]] ?? DEFAULT_FLOWER;
-      const flowerText = this.add.text(x, y, emoji, { fontSize: '12px' })
+      const flowerText = this.add.text(x, y, emoji, { fontSize: '12px', resolution: 3 })
         .setInteractive({ useHandCursor: true })
         .on('pointerdown', () => this.articlePanel.show(article));
 

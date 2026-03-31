@@ -12,7 +12,9 @@ const config: Phaser.Types.Core.GameConfig = {
   height: 240,
   zoom: 3,           // scales 320x240 → 960x720 (crisp pixel art)
   pixelArt: true,    // disables anti-aliasing on all textures
-  backgroundColor: '#1a0a1a',
+  antialias: false,
+  roundPixels: true,
+  backgroundColor: '#f8ddea',
   physics: {
     default: 'arcade',
     arcade: {

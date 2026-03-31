@@ -8,7 +8,7 @@
 body {
   margin: 0;
   padding: 0;
-  background: #1a0a1a;
+  background: #f8ddea;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -18,8 +18,11 @@ body {
 
 #app {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: min(960px, 100vw);
+  height: min(720px, 100vh);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── Pixel-perfect canvas rendering ───────────── */
@@ -32,6 +35,9 @@ canvas {
 /* ── Dialogue box ──────────────────────────────── */
 #dialogue-box {
   font-family: 'Courier New', Courier, monospace;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
 }
 
 /* ── Content panels ────────────────────────────── */

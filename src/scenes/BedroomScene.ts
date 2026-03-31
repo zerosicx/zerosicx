@@ -1,30 +1,83 @@
 import Phaser from 'phaser';
 import { PlayerController } from '../systems/PlayerController';
 import { DialogueSystem } from '../systems/DialogueSystem';
+import { ComputerPanel } from '../ui/ComputerPanel';
+import { loadProjects, Project } from '../data/content-loader';
 
 // ─── Object dialogue lines ───────────────────────────────────────────────────
 const DIALOGUES: Record<string, string[]> = {
-  cat:       ["Mrow.", "...she stares at you judgementally.", "(adorable)"],
-  bed:       ["Zzz... not right now.", "There are things to explore first."],
-  bookshelf: ["Currently reading: The Pragmatic Programmer.", "Some old favourites on the shelf too."],
-  window:    ["Sunlight filters through the curtains.", "A good day to make something."],
-  pinboard:  ["Notes, doodles, and a few too many sticky notes.", "The organised chaos of a developer."],
-  computer:  ["*the screen flickers to life*", "Head to the Projects section..."],
+  cat:      ["Mrow.", "...she stares at you judgementally.", "(adorable)"],
+  bed:      ["Zzz... not right now.", "There are things to explore first."],
+  dresser:  ["Some well-worn books and a few trinkets.", "The organised chaos of a developer."],
+  window:   ["Sunlight filters through the curtains.", "A good day to make something."],
 };
 
-// ─── Object positions (placeholder, replace with Tiled object layer later) ───
+// ─── Interaction hotspots ────────────────────────────────────────────────────
 const OBJECTS = [
-  { name: 'bookshelf', x: 48,  y: 40,  w: 48, h: 32, color: 0x8b5cf6 },
-  { name: 'pinboard',  x: 140, y: 40,  w: 48, h: 32, color: 0xfbbf24 },
-  { name: 'computer',  x: 268, y: 60,  w: 40, h: 48, color: 0x6366f1 },
-  { name: 'bed',       x: 64,  y: 180, w: 64, h: 48, color: 0xf472b6 },
-  { name: 'cat',       x: 200, y: 140, w: 16, h: 16, color: 0xfcd34d },
-  { name: 'window',    x: 260, y: 40,  w: 32, h: 24, color: 0x93c5fd },
+  { name: 'dresser',  x: 64,  y: 32 },
+  { name: 'dresser',  x: 144, y: 32 },
+  { name: 'computer', x: 272, y: 48 },
+  { name: 'bed',      x: 48,  y: 176 },
+  { name: 'window',   x: 264, y: 8 },
+  { name: 'clock',    x: 200, y: 8 },
 ];
 
 const INTERACT_RANGE = 32;
 const DOOR_Y_THRESHOLD = 228; // walk south past this → garden
-const DOOR_REENTRY_Y = 206; // spawn from garden near bedroom door
+const DOOR_REENTRY_Y = 206;   // spawn from garden near bedroom door
+
+// ─── Tile grid constants ─────────────────────────────────────────────────────
+const TILE = 16;
+const COLS = 20; // 320 / 16
+const ROWS = 15; // 240 / 16
+const SPRITESHEET_COLS = 7; // WoodenHouse.png has 7 columns
+
+// Frame indices computed as row * SPRITESHEET_COLS + col
+const F = {
+  wall_window:       0 * SPRITESHEET_COLS + 1,
+  top_left_wall:     1 * SPRITESHEET_COLS + 0,
+  top_middle_wall:   1 * SPRITESHEET_COLS + 1,
+  top_right_wall:    1 * SPRITESHEET_COLS + 2,
+  left_wall:         2 * SPRITESHEET_COLS + 0,
+  floor:             2 * SPRITESHEET_COLS + 1,
+  right_wall:        2 * SPRITESHEET_COLS + 2,
+  bottom_left_wall:  3 * SPRITESHEET_COLS + 0,
+  bottom_wall:       3 * SPRITESHEET_COLS + 1,
+  bottom_right_wall: 3 * SPRITESHEET_COLS + 2,
+} as const;
+
+// Door frames (Doors.png — single column spritesheet)
+const D = {
+  entrance_no_door: 0,
+  door_closed:      1,
+  door_open:        2,
+  door_half_open:   3,
+} as const;
+
+const DOOR_COL = 10;
+const DOOR_CENTER_X = DOOR_COL * TILE + TILE / 2; // 168
+const DOOR_CENTER_Y = (ROWS - 1) * TILE + TILE / 2; // 232
+const DOOR_RANGE_FAR = 48;
+const DOOR_RANGE_NEAR = 32;
+
+// Furniture frame indices (BasicFurniture.png — 9 columns)
+const FURN_COLS = 9;
+const FN = {
+  painting_0_0:            0 * FURN_COLS + 0,
+  painting_0_1:            0 * FURN_COLS + 1,
+  painting_0_2:            0 * FURN_COLS + 2,
+  sunflower:               0 * FURN_COLS + 3,
+  sprout:                  0 * FURN_COLS + 4,
+  potted_small_flower:     0 * FURN_COLS + 5,
+  bed_forward_top_pink:    1 * FURN_COLS + 2,
+  bed_forward_bottom_pink: 2 * FURN_COLS + 2,
+  dresser:                 2 * FURN_COLS + 3,
+  chair_right:             2 * FURN_COLS + 4,
+  large_table:             3 * FURN_COLS + 3,
+  large_hanging_clock:     3 * FURN_COLS + 5,
+} as const;
+
+const WINDOW_COL = 16;
 
 /**
  * BedroomScene
@@ -35,9 +88,16 @@ const DOOR_REENTRY_Y = 206; // spawn from garden near bedroom door
  * Phase 2: Replace with Tiled tilemap + actual spritesheets.
  */
 export class BedroomScene extends Phaser.Scene {
-  private player!: Phaser.GameObjects.Rectangle;
+  private player!: Phaser.GameObjects.Sprite;
   private controller!: PlayerController;
   private dialogue!: DialogueSystem;
+  private doorSprite!: Phaser.GameObjects.Image;
+  private catSprite!: Phaser.GameObjects.Sprite;
+  private catState: 'idle' | 'walking' = 'idle';
+  private catTimer = 0;
+  private catDir: 'down' | 'up' | 'left' | 'right' = 'down';
+  private computerPanel!: ComputerPanel;
+  private projects: Project[] | null = null;
   private activeDialogue: string[] = [];
   private dialogueIndex = 0;
   private inDialogue = false;
@@ -51,12 +111,14 @@ export class BedroomScene extends Phaser.Scene {
     this.activeDialogue = [];
     this.dialogueIndex = 0;
 
+    this.computerPanel = new ComputerPanel();
     this.drawRoom();
 
-    // Player
     const spawnY = data?.from === 'garden' ? DOOR_REENTRY_Y : 160;
-    this.player = this.add.rectangle(160, spawnY, 12, 16, 0xff90c0);
-    this.controller = new PlayerController(this, this.player);
+    this.player = this.add.sprite(160, spawnY, 'visitor', 0);
+    this.controller = new PlayerController(this, this.player, {
+      minX: 26, maxX: 298, minY: 24, maxY: 235,
+    });
     this.dialogue = new DialogueSystem();
 
     // Input
@@ -65,11 +127,30 @@ export class BedroomScene extends Phaser.Scene {
     this.input.on('pointerdown', () => this.onAction());
   }
 
-  update() {
+  update(_time: number, delta: number) {
+    this.updateCat(delta);
     if (this.inDialogue) return;
     this.controller.update();
 
-    // Transition to garden when player walks south through the door
+    // Faint when player walks onto the bed (2x bed area: x 32–64, y 144–208)
+    const onBed = this.player.x >= 32 && this.player.x <= 64
+      && this.player.y >= 144 && this.player.y <= 208;
+    if (onBed && !this.controller.isFainted) {
+      this.controller.faint();
+    }
+
+    // Animate door based on player proximity
+    const doorDist = Phaser.Math.Distance.Between(
+      this.player.x, this.player.y, DOOR_CENTER_X, DOOR_CENTER_Y,
+    );
+    if (doorDist < DOOR_RANGE_NEAR) {
+      this.doorSprite.setFrame(D.door_open);
+    } else if (doorDist < DOOR_RANGE_FAR) {
+      this.doorSprite.setFrame(D.door_half_open);
+    } else {
+      this.doorSprite.setFrame(D.door_closed);
+    }
+
     if (this.player.y >= DOOR_Y_THRESHOLD) {
       this.scene.start('GardenScene', { from: 'bedroom' });
     }
@@ -79,27 +160,79 @@ export class BedroomScene extends Phaser.Scene {
 
   private drawRoom() {
     // Floor
-    this.add.rectangle(160, 120, 320, 240, 0xf9d8e8);
+    this.add
+      .tileSprite(TILE, TILE, (COLS - 2) * TILE, (ROWS - 2) * TILE, 'wooden-house', F.floor)
+      .setOrigin(0, 0);
 
-    // Walls
-    this.add.rectangle(160, 8,   320, 16,  0xc084a0); // top
-    this.add.rectangle(4,   120, 8,   240, 0xc084a0); // left
-    this.add.rectangle(316, 120, 8,   240, 0xc084a0); // right
+    // ── Top wall (with wall_window at WINDOW_COL) ─────────────────────────
+    this.placeTile(0, 0, F.top_left_wall);
+    for (let col = 1; col < COLS - 1; col++) {
+      this.placeTile(col, 0, col === WINDOW_COL ? F.wall_window : F.top_middle_wall);
+    }
+    this.placeTile(COLS - 1, 0, F.top_right_wall);
 
-    // Door south (visible gap in bottom wall)
-    this.add.rectangle(160, 236, 40, 8, 0xa78bfa);
-
-    // Placeholder objects
-    for (const obj of OBJECTS) {
-      this.add.rectangle(obj.x, obj.y, obj.w, obj.h, obj.color);
+    // ── Side walls ───────────────────────────────────────────────────────
+    for (let row = 1; row < ROWS - 1; row++) {
+      this.placeTile(0, row, F.left_wall);
+      this.placeTile(COLS - 1, row, F.right_wall);
     }
 
-    // Dev label — remove in Phase 2
-    this.add.text(4, 226, 'bedroom \u2014 phase 1 placeholder', {
-      fontSize: '5px',
+    // ── Bottom wall with door ────────────────────────────────────────────
+    this.placeTile(0, ROWS - 1, F.bottom_left_wall);
+    for (let col = 1; col < COLS - 1; col++) {
+      if (col === DOOR_COL) continue;
+      this.placeTile(col, ROWS - 1, F.bottom_wall);
+    }
+    this.placeTile(COLS - 1, ROWS - 1, F.bottom_right_wall);
+    this.doorSprite = this.add
+      .image(DOOR_COL * TILE, (ROWS - 1) * TILE, 'doors', D.door_closed)
+      .setOrigin(0, 0);
+
+    // ── Wall decorations (1× so they sit within the 16 px wall) ─────────
+    this.placeDecor(3, 0, FN.painting_0_0);
+    this.placeDecor(8, 0, FN.painting_0_1);
+    this.placeDecor(12, 0, FN.large_hanging_clock);
+
+    // ── Furniture (all 2×) ──────────────────────────────────────────────
+    // Dressers flush against the wall
+    this.placeFurn(3, 1, FN.dresser);
+    this.placeFurn(8, 1, FN.dresser);
+
+    // Computer desk: chair → table with painting "screen" on top
+    this.placeFurn(14, 2, FN.chair_right);
+    this.placeFurn(16, 2, FN.large_table);
+    this.placeFurn(16, 2, FN.painting_0_2);
+
+    // Bed (pink, forward-facing — top + bottom)
+    this.placeFurn(2, 9, FN.bed_forward_top_pink);
+    this.placeFurn(2, 11, FN.bed_forward_bottom_pink);
+
+    // Decorative plants (1×)
+    this.placeDecor(1, 2, FN.potted_small_flower);
+    this.placeDecor(1, 7, FN.sprout);
+    this.placeDecor(17, 10, FN.sunflower);
+
+    // Yuumi
+    this.catSprite = this.add.sprite(200, 140, 'cat', 13).setScale(2);
+    this.catSprite.play('cat-idle-forward');
+
+    this.add.text(4, 226, 'bedroom', {
+      fontFamily: 'monospace',
+      fontSize: '8px',
       color: '#c084a0',
-      resolution: 3,
-    });
+    }).setResolution(3);
+  }
+
+  private placeTile(col: number, row: number, frame: number) {
+    this.add.image(col * TILE, row * TILE, 'wooden-house', frame).setOrigin(0, 0);
+  }
+
+  private placeFurn(col: number, row: number, frame: number) {
+    this.add.image(col * TILE, row * TILE, 'furniture', frame).setOrigin(0, 0).setScale(2);
+  }
+
+  private placeDecor(col: number, row: number, frame: number) {
+    this.add.image(col * TILE, row * TILE, 'furniture', frame).setOrigin(0, 0);
   }
 
   private onAction() {
@@ -114,12 +247,44 @@ export class BedroomScene extends Phaser.Scene {
     const px = this.player.x;
     const py = this.player.y;
 
+    // Dynamic cat interaction (follows the sprite)
+    const catDist = Phaser.Math.Distance.Between(px, py, this.catSprite.x, this.catSprite.y);
+    if (catDist < INTERACT_RANGE) {
+      this.startDialogue(DIALOGUES.cat);
+      return;
+    }
+
     for (const obj of OBJECTS) {
       const dist = Phaser.Math.Distance.Between(px, py, obj.x, obj.y);
       if (dist < INTERACT_RANGE) {
-        this.startDialogue(DIALOGUES[obj.name] ?? ['...']);
+        if (obj.name === 'computer') {
+          this.openComputerPanel();
+        } else if (obj.name === 'clock') {
+          const now = new Date();
+          const h = now.getHours() % 12 || 12;
+          const m = now.getMinutes().toString().padStart(2, '0');
+          const period = now.getHours() >= 12 ? 'PM' : 'AM';
+          this.startDialogue([`The time is ${h}:${m} ${period}.`, "Tick, tock..."]);
+        } else {
+          this.startDialogue(DIALOGUES[obj.name] ?? ['...']);
+        }
         return;
       }
+    }
+  }
+
+  private openComputerPanel() {
+    this.inDialogue = true;
+    const showPanel = (projects: Project[]) => {
+      this.computerPanel.show(projects, () => { this.inDialogue = false; });
+    };
+
+    if (this.projects) {
+      showPanel(this.projects);
+    } else {
+      loadProjects()
+        .then(projects => { this.projects = projects; showPanel(projects); })
+        .catch(() => { showPanel([]); });
     }
   }
 
@@ -142,5 +307,46 @@ export class BedroomScene extends Phaser.Scene {
     } else {
       this.dialogue.show(this.activeDialogue[this.dialogueIndex]);
     }
+  }
+
+  // ── Cat wandering AI ──────────────────────────────────────────────────────
+
+  private updateCat(delta: number) {
+    this.catTimer -= delta;
+    if (this.catTimer <= 0) {
+      if (this.catState === 'idle') {
+        this.catState = 'walking';
+        const dirs = ['down', 'up', 'left', 'right'] as const;
+        this.catDir = dirs[Phaser.Math.Between(0, 3)];
+        this.catTimer = Phaser.Math.Between(1000, 2500);
+        this.playCatAnim('walk');
+      } else {
+        this.catState = 'idle';
+        this.catTimer = Phaser.Math.Between(2000, 5000);
+        this.playCatAnim('idle');
+      }
+    }
+
+    if (this.catState === 'walking') {
+      const speed = 0.3;
+      switch (this.catDir) {
+        case 'left':  this.catSprite.x -= speed; break;
+        case 'right': this.catSprite.x += speed; break;
+        case 'up':    this.catSprite.y -= speed; break;
+        case 'down':  this.catSprite.y += speed; break;
+      }
+      this.catSprite.x = Phaser.Math.Clamp(this.catSprite.x, 30, 294);
+      this.catSprite.y = Phaser.Math.Clamp(this.catSprite.y, 40, 220);
+    }
+  }
+
+  private playCatAnim(mode: 'idle' | 'walk') {
+    const key =
+      this.catDir === 'down'  ? `cat-${mode}-forward` :
+      this.catDir === 'up'    ? `cat-${mode}-back`    :
+                                `cat-${mode}-side`;
+
+    this.catSprite.setFlipX(this.catDir === 'left');
+    this.catSprite.play(key, true);
   }
 }

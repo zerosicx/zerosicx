@@ -1,7 +1,9 @@
+import { Project } from '../data/content-loader';
+
 /**
  * ComputerPanel
  * Retro terminal overlay with a staggered boot sequence.
- * Styled with Tailwind CSS — dark bg, monospace, phosphor-glow aesthetic.
+ * Lists real projects loaded from content/projects/.
  */
 export class ComputerPanel {
   private backdrop: HTMLElement | null = null;
@@ -9,8 +11,9 @@ export class ComputerPanel {
   private onCloseCallback: (() => void) | null = null;
   private bootTimers: ReturnType<typeof setTimeout>[] = [];
   private escHandler: ((e: KeyboardEvent) => void) | null = null;
+  private currentProjects: Project[] = [];
 
-  show(onClose?: () => void) {
+  show(projects: Project[], onClose?: () => void) {
     if (this.panel) return;
     this.onCloseCallback = onClose ?? null;
 
@@ -26,7 +29,7 @@ export class ComputerPanel {
     this.panel = document.createElement('div');
     this.panel.className = [
       'fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2',
-      'w-[480px]', 'max-w-[calc(100%-2rem)]', 'max-h-[360px]',
+      'w-[480px]', 'max-w-[calc(100%-2rem)]', 'max-h-[420px]',
       'bg-gray-950', 'border-2', 'border-gray-700',
       'rounded-md',
       'z-50',
@@ -48,12 +51,6 @@ export class ComputerPanel {
       <div id="terminal-body" class="flex-1 overflow-y-auto p-4 text-sm text-green-300 leading-relaxed">
         <p id="terminal-cursor" class="animate-pulse">>&nbsp;_</p>
       </div>
-
-      <div class="px-4 pb-3">
-        <p class="text-xs text-gray-600 italic">
-          Full project list coming in v2. Check back soon 🌱
-        </p>
-      </div>
     `;
 
     app.appendChild(this.backdrop);
@@ -66,7 +63,8 @@ export class ComputerPanel {
     };
     document.addEventListener('keydown', this.escHandler);
 
-    this.runBootSequence();
+    this.currentProjects = projects;
+    this.runBootSequence(projects);
   }
 
   hide() {
@@ -86,16 +84,21 @@ export class ComputerPanel {
     this.onCloseCallback = null;
   }
 
-  private runBootSequence() {
-    const lines = [
-      '> loading zerosicx...',
-      '> projects directory found.',
-      '> 1 project loaded.',
-      '>',
-      '> [zerosicx] — pixel-art personal website (active)',
-      '> more projects coming soon...',
-      '>',
-      "> type 'help' for commands. (just kidding, I'm just a div.)",
+  private runBootSequence(projects: Project[]) {
+    const statusIcon = (s: Project['status']) =>
+      s === 'active' ? '\u{1F7E2}' : s === 'completed' ? '\u2705' : '\u{1F4E6}';
+
+    const lines: { text: string; html?: string }[] = [
+      { text: '> loading zerosicx...' },
+      { text: '> projects directory found.' },
+      { text: `> ${projects.length} project${projects.length !== 1 ? 's' : ''} loaded.` },
+      { text: '' },
+      ...projects.map(p => ({
+        text: '',
+        html: `<button class="project-btn text-left text-green-300 hover:text-green-100 cursor-pointer bg-transparent border-0 p-0 font-mono text-sm" data-slug="${p.slug}">${statusIcon(p.status)} [${p.slug}] — ${p.description.slice(0, 55)}${p.description.length > 55 ? '...' : ''} <span class="text-gray-500">(${p.status})</span></button>`,
+      })),
+      { text: '' },
+      { text: "> press Esc or click outside to close." },
     ];
 
     const body = document.getElementById('terminal-body');
@@ -105,15 +108,56 @@ export class ComputerPanel {
     lines.forEach((line, i) => {
       const timer = setTimeout(() => {
         const p = document.createElement('p');
-        if (line === '>') {
+        if (line.html) {
+          p.innerHTML = line.html;
+        } else if (line.text === '') {
           p.innerHTML = '&nbsp;';
         } else {
-          p.textContent = line;
+          p.textContent = line.text;
         }
         body.insertBefore(p, cursor);
         body.scrollTop = body.scrollHeight;
+
+        // After last line: wire up project clicks and hide cursor
+        if (i === lines.length - 1) {
+          cursor.style.display = 'none';
+          this.wireProjectButtons(projects);
+        }
       }, (i + 1) * 120);
       this.bootTimers.push(timer);
+    });
+  }
+
+  private wireProjectButtons(projects: Project[]) {
+    document.querySelectorAll('.project-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const slug = (btn as HTMLElement).dataset.slug;
+        const project = projects.find(p => p.slug === slug);
+        if (project) this.showProjectDetail(project);
+      });
+    });
+  }
+
+  private showProjectDetail(project: Project) {
+    const body = document.getElementById('terminal-body');
+    if (!body) return;
+
+    const tags = project.tags.map(t => `<span class="text-cyan-400">#${t}</span>`).join(' ');
+    const period = project.dateEnd === 'present'
+      ? `${project.dateStart} — present`
+      : `${project.dateStart} — ${project.dateEnd}`;
+
+    body.innerHTML = `
+      <button id="back-btn" class="text-green-500 hover:text-green-300 cursor-pointer bg-transparent border-0 p-0 font-mono text-sm mb-3">&larr; back</button>
+      <h3 class="text-green-100 text-base font-bold mb-1">${project.title}</h3>
+      <p class="text-gray-500 text-xs mb-2">${period}</p>
+      <p class="text-xs mb-3">${tags}</p>
+      <div class="text-green-300/90 text-sm leading-relaxed prose-invert">${project.body}</div>
+    `;
+
+    document.getElementById('back-btn')?.addEventListener('click', () => {
+      body.innerHTML = '<p id="terminal-cursor" class="animate-pulse">>&nbsp;_</p>';
+      this.runBootSequence(this.currentProjects);
     });
   }
 }

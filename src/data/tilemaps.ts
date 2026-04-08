@@ -1,5 +1,18 @@
+type TileEntry = { col: number; row: number; x: number; y: number; w: number; h: number };
+
+export function toFrameMap<T extends Record<string, TileEntry>>(
+  tilemap: { columns: number; tiles: T },
+): { [K in keyof T]: number } {
+  const result = {} as { [K in keyof T]: number };
+  for (const [name, tile] of Object.entries(tilemap.tiles) as [keyof T & string, TileEntry][]) {
+    result[name] = tile.row * tilemap.columns + tile.col;
+  }
+  return result;
+}
+
 export const WoodenHouse = {
     sourceName: "WoodenHouse.png",
+    columns: 7,
     tileSize: { w: 16, h: 16 },
     tiles: {
         wall_window: { col: 1, row: 0, x: 16, y: 0, w: 16, h: 16 },
@@ -37,6 +50,7 @@ export const WoodenHouse = {
 
 export const Grass = {
     sourceName: "Grass.png",
+    columns: 11,
     tileSize: { w: 16, h: 16 },
     tiles: {
         grass_top_left: { col: 0, row: 0, x: 0, y: 0, w: 16, h: 16 },
@@ -99,6 +113,7 @@ export const Grass = {
 
 export const Doors = {
     sourceName: "Doors.png",
+    columns: 1,
     tileSize: { w: 16, h: 16 },
     tiles: {
         entrance_no_door: { col: 0, row: 0, x: 0, y: 0, w: 16, h: 16 },
@@ -110,6 +125,7 @@ export const Doors = {
 
 export const Fences = {
     sourceName: "Fences.png",
+    columns: 4,
     tileSize: { w: 16, h: 16 },
     tiles: {
         fence_top_1: { col: 0, row: 0, x: 0, y: 0, w: 16, h: 16 },
@@ -133,6 +149,7 @@ export const Fences = {
 
 export const Furniture = {
     sourceName: "BasicFurniture.png",
+    columns: 9,
     tileSize: { w: 16, h: 16 },
     tiles: {
         painting_0_0: { col: 0, row: 0, x: 0, y: 0, w: 16, h: 16 },
@@ -180,6 +197,7 @@ export const Furniture = {
 
 export const Plants = {
     sourceName: "BasicPlants.png",
+    columns: 6,
     tileSize: { w: 16, h: 16 },
     tiles: {
         wheat_seed: { col: 0, row: 0, x: 0, y: 0, w: 16, h: 16 },
@@ -199,6 +217,7 @@ export const Plants = {
 
 export const GrassBiomePlants = {
     sourceName: "GrassBiomeThings.png",
+    columns: 9,
     tileSize: { w: 16, h: 16 },
     tiles: {
         small_tree_top: { col: 0, row: 0, x: 0, y: 0, w: 16, h: 16 },
@@ -251,6 +270,7 @@ export const GrassBiomePlants = {
 
 export const Visitor = {
     sourceName: "Visitor.png",
+    columns: 6,
     tileSize: { w: 32, h: 32 },
     tiles: {
         visitor_idle_0_0: { col: 0, row: 0, x: 0, y: 0, w: 32, h: 32 },
@@ -310,6 +330,7 @@ export const Visitor = {
 
 export const Cat = {
     sourceName: "Cat Spritesheet.png",
+    columns: 12,
     tileSize: { w: 16, h: 16 },
     tiles: {
         cat_idle_1: { col: 1, row: 1, x: 16, y: 16, w: 16, h: 16 },
@@ -333,6 +354,7 @@ export const Cat = {
 
 export const Chests = {
     sourceName: "Chest.png",
+    columns: 15,
     tileSize: { w: 16, h: 16 },
     tiles: {
         small_chest_open_top: { col: 10, row: 0, x: 160, y: 0, w: 16, h: 16 },

@@ -3,6 +3,7 @@ import { PlayerController } from '../systems/PlayerController';
 import { DialogueSystem } from '../systems/DialogueSystem';
 import { ComputerPanel } from '../ui/ComputerPanel';
 import { loadProjects, Project } from '../data/content-loader';
+import { WoodenHouse, Doors, Furniture, toFrameMap } from '../data/tilemaps';
 
 // ─── Object dialogue lines ───────────────────────────────────────────────────
 const DIALOGUES: Record<string, string[]> = {
@@ -37,29 +38,10 @@ const DOOR_REENTRY_Y = 206;   // spawn from garden near bedroom door
 const TILE = 16;
 const COLS = 20; // 320 / 16
 const ROWS = 15; // 240 / 16
-const SPRITESHEET_COLS = 7; // WoodenHouse.png has 7 columns
 
-// Frame indices computed as row * SPRITESHEET_COLS + col
-const F = {
-  wall_window:       0 * SPRITESHEET_COLS + 1,
-  top_left_wall:     1 * SPRITESHEET_COLS + 0,
-  top_middle_wall:   1 * SPRITESHEET_COLS + 1,
-  top_right_wall:    1 * SPRITESHEET_COLS + 2,
-  left_wall:         2 * SPRITESHEET_COLS + 0,
-  floor:             2 * SPRITESHEET_COLS + 1,
-  right_wall:        2 * SPRITESHEET_COLS + 2,
-  bottom_left_wall:  3 * SPRITESHEET_COLS + 0,
-  bottom_wall:       3 * SPRITESHEET_COLS + 1,
-  bottom_right_wall: 3 * SPRITESHEET_COLS + 2,
-} as const;
-
-// Door frames (Doors.png — single column spritesheet)
-const D = {
-  entrance_no_door: 0,
-  door_closed:      1,
-  door_open:        2,
-  door_half_open:   3,
-} as const;
+const F = toFrameMap(WoodenHouse);
+const D = toFrameMap(Doors);
+const FN = toFrameMap(Furniture);
 
 const DOOR_COL = 10;
 const DOOR_CENTER_X = DOOR_COL * TILE + TILE / 2; // 168
@@ -67,22 +49,6 @@ const DOOR_CENTER_Y = (ROWS - 1) * TILE + TILE / 2; // 232
 const DOOR_RANGE_FAR = 48;
 const DOOR_RANGE_NEAR = 32;
 
-// Furniture frame indices (BasicFurniture.png — 9 columns)
-const FURN_COLS = 9;
-const FN = {
-  painting_0_0:            0 * FURN_COLS + 0,
-  painting_0_1:            0 * FURN_COLS + 1,
-  painting_0_2:            0 * FURN_COLS + 2,
-  sunflower:               0 * FURN_COLS + 3,
-  sprout:                  0 * FURN_COLS + 4,
-  potted_small_flower:     0 * FURN_COLS + 5,
-  bed_forward_top_pink:    1 * FURN_COLS + 2,
-  bed_forward_bottom_pink: 2 * FURN_COLS + 2,
-  dresser:                 2 * FURN_COLS + 3,
-  chair_right:             2 * FURN_COLS + 4,
-  large_table:             3 * FURN_COLS + 3,
-  large_hanging_clock:     3 * FURN_COLS + 5,
-} as const;
 
 const WINDOW_COL = 16;
 

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { Cat, Visitor, toFrameMap } from '../data/tilemaps';
 
 /**
  * BootScene
@@ -55,33 +56,28 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
-    const VCOLS = 6;
+    const VF = toFrameMap(Visitor);
+    const CF = toFrameMap(Cat);
     const rate = 8;
 
-    const anim = (key: string, row: number, endCol: number, repeat = -1) => {
+    const anim = (key: string, start: number, end: number, repeat = -1) => {
       this.anims.create({
         key,
-        frames: this.anims.generateFrameNumbers('visitor', {
-          start: row * VCOLS,
-          end: row * VCOLS + endCol,
-        }),
+        frames: this.anims.generateFrameNumbers('visitor', { start, end }),
         frameRate: rate,
         repeat,
       });
     };
 
-    anim('visitor-idle-forward', 0, 5);
-    anim('visitor-idle-right',   1, 5);
-    anim('visitor-idle-back',    2, 5);
-    anim('visitor-walk-forward', 3, 5);
-    anim('visitor-walk-side',    4, 5);
-    anim('visitor-walk-back',    5, 5);
-    anim('visitor-faint',        9, 3, 0);
+    anim('visitor-idle-forward', VF.visitor_idle_0_0,          VF.visitor_idle_0_5);
+    anim('visitor-idle-right',   VF.visitor_idle_right_0_0,    VF.visitor_idle_right_0_5);
+    anim('visitor-idle-back',    VF.visitor_idle_back_0_0,     VF.visitor_idle_back_0_5);
+    anim('visitor-walk-forward', VF.visitor_walk_forward_0_0,  VF.visitor_walk_forward_0_5);
+    anim('visitor-walk-side',    VF.visitor_walk_side_0_0,     VF.visitor_walk_side_0_5);
+    anim('visitor-walk-back',    VF.visitor_walk_back_0_0,     VF.visitor_walk_back_0_5);
+    anim('visitor-faint',        VF.visitor_faint_0_0,         VF.visitor_faint_0_3, 0);
 
-    // ── Cat animations (non-contiguous frames: 12 cols in spritesheet) ──
-    const CAT_COLS = 12;
-    const cf = (row: number, col: number) => row * CAT_COLS + col;
-
+    // ── Cat animations (non-contiguous frames) ──
     const catAnim = (key: string, frames: number[], frameRate: number) => {
       this.anims.create({
         key,
@@ -91,12 +87,12 @@ export class BootScene extends Phaser.Scene {
       });
     };
 
-    catAnim('cat-idle-forward', [cf(1, 1), cf(1, 4)], 3);
-    catAnim('cat-idle-back',    [cf(4, 1), cf(4, 4)], 3);
-    catAnim('cat-idle-side',    [cf(10, 1), cf(10, 4)], 3);
-    catAnim('cat-walk-forward', [cf(1, 7), cf(1, 10)], 6);
-    catAnim('cat-walk-back',    [cf(4, 7), cf(4, 10)], 6);
-    catAnim('cat-walk-side',    [cf(10, 7), cf(10, 10)], 6);
+    catAnim('cat-idle-forward', [CF.cat_idle_1, CF.cat_idle_2], 3);
+    catAnim('cat-idle-back',    [CF.cat_back_idle_1, CF.cat_back_idle_2], 3);
+    catAnim('cat-idle-side',    [CF.cat_idle_right_1, CF.cat_idle_right_2], 3);
+    catAnim('cat-walk-forward', [CF.cat_walk_left_foot, CF.cat_walk_right_foot], 6);
+    catAnim('cat-walk-back',    [CF.cat_walk_back_left_foot, CF.cat_walk_back_right_foot], 6);
+    catAnim('cat-walk-side',    [CF.cat_walk_right_left_foot, CF.cat_walk_right_right_foot], 6);
 
     const hasVisited = localStorage.getItem('zerosicx_visited');
     if (hasVisited) {

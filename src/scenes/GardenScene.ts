@@ -127,7 +127,7 @@ export class GardenScene extends Phaser.Scene {
     this.drawGarden();
 
     const spawnY = data?.from === 'bedroom' ? GARDEN_ENTRY_Y : GARDEN_ENTRY_Y;
-    this.player = this.add.sprite(160, spawnY, 'visitor', 0);
+    this.player = this.add.sprite(160, spawnY, 'visitor', 0).setDepth(10);
     this.controller = new PlayerController(this, this.player, {
       minX: 30, maxX: 286, minY: 18, maxY: 206,
     });
@@ -223,7 +223,8 @@ export class GardenScene extends Phaser.Scene {
     // ── Door (placed after grass so it's not covered) ─────────────────
     this.doorSprite = this.add
       .image(DOOR_COL * TILE, DOOR_ROW * TILE, 'doors', D.door_closed)
-      .setOrigin(0, 0);
+      .setOrigin(0, 0)
+      .setDepth(20);
 
     // ── Fences (full perimeter with door gap at top) ───────────────────
     // Top: left section → gap at DOOR_COL → right section
@@ -268,7 +269,7 @@ export class GardenScene extends Phaser.Scene {
   }
 
   private placeFence(col: number, row: number, frame: number) {
-    this.add.image(col * TILE, row * TILE, 'fences', frame).setOrigin(0, 0);
+    this.add.image(col * TILE, row * TILE, 'fences', frame).setOrigin(0, 0).setDepth(20);
   }
 
   private placeFlowers() {

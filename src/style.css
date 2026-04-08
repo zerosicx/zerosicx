@@ -56,6 +56,13 @@ canvas {
   scrollbar-color: #8a3a5e #fef3e2;
 }
 
+#article-body p {
+  margin-bottom: 0.75em;
+}
+#article-body p:last-child {
+  margin-bottom: 0;
+}
+
 /* ── Welcome title overlay ────────────────────── */
 #welcome-title {
   font-family: 'Pixelify Sans', cursive;

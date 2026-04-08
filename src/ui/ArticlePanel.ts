@@ -144,7 +144,7 @@ export class ArticlePanel {
     this.panel.id = 'article-panel';
     this.panel.className = [
       'fixed', 'top-4', 'right-4', 'bottom-4',
-      'w-96',
+      'w-[480px]',
       'bg-[#fef3e2]',
       'border-4', 'border-[#a8607e]',
       'p-5',

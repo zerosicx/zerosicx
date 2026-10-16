@@ -269,8 +269,10 @@ export class BedroomScene extends Phaser.Scene {
     this.hostSeated = true;
     this.hostSpot = 'desk';
     this.host.setPosition(SEAT.x, SEAT.y).setFlipX(false).play('host-type');
-    // Her hair rests on the seat; anything lower would poke out around the chair.
-    this.host.setCrop(0, 0, this.host.width, CHAIR_SEAT_Y - (SEAT.y - this.host.height / 2));
+    // Her hair rests on the seat and stays within the chair's back: anything
+    // lower or wider would poke out around the chair.
+    const left = this.chair.x - this.chair.width / 2 - (SEAT.x - this.host.width / 2);
+    this.host.setCrop(Math.max(0, left), 0, this.chair.width, CHAIR_SEAT_Y - (SEAT.y - this.host.height / 2));
   }
 
   private standUp() {

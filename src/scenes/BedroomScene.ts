@@ -160,7 +160,7 @@ export class BedroomScene extends Phaser.Scene {
     }
 
     if (this.inDialogue) return;
-    this.controller.update();
+    this.controller.update(delta);
 
     // Faint when player walks onto the bed (x 32–64, y 144–208)
     const onBed = this.player.x >= 32 && this.player.x <= 64
@@ -249,7 +249,7 @@ export class BedroomScene extends Phaser.Scene {
 
   private addHost() {
     this.host = this.add.sprite(SEAT.x, SEAT.y, 'host', 0);
-    this.hostWalker = new Walker(this.host, 'host', 0.035);
+    this.hostWalker = new Walker(this.host, 'host', 0.035, 6);
   }
 
   private wait(ms: number) {
@@ -353,7 +353,7 @@ export class BedroomScene extends Phaser.Scene {
 
   private addCat() {
     this.catSprite = this.add.sprite(200, 140, 'cat', 0);
-    this.cat = new Walker(this.catSprite, 'cat', 0.03);
+    this.cat = new Walker(this.catSprite, 'cat', 0.03, 4); // short legs, quick little steps
     this.cat.face('down');
   }
 

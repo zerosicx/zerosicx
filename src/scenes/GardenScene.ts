@@ -119,9 +119,9 @@ export class GardenScene extends Phaser.Scene {
     this.placeFlowers();
   }
 
-  update() {
+  update(_time: number, delta: number) {
     if (!this.controller || !this.player) return;
-    this.controller.update();
+    this.controller.update(delta);
     this.updateSakuraDepth();
 
     // Animate door

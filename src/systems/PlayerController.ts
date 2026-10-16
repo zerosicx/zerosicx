@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
+import { StrideAnimator } from './StrideAnimator';
 
-const SPEED = 2;
+const SPEED = 90;          // px per second at full walking pace
+const ACCEL_MS = 90;       // time to ease from standing to full pace
+const STRIDE = 7;          // px travelled per walk-cycle frame (stride matching)
 
 export interface MovementBounds {
   minX: number;
@@ -42,6 +45,8 @@ export class PlayerController {
   };
 
   private colliders: Rect[];
+  private stride: StrideAnimator;
+  private pace = 0; // 0 → 1 while easing into a walk
 
   constructor(scene: Phaser.Scene, player: Phaser.GameObjects.Sprite, bounds = DEFAULT_BOUNDS, colliders: Rect[] = []) {
     this.player = player;
@@ -60,6 +65,7 @@ export class PlayerController {
       right: Phaser.Input.Keyboard.Key;
     };
 
+    this.stride = new StrideAnimator(player, STRIDE);
     this.playIdle();
   }
 
@@ -67,50 +73,54 @@ export class PlayerController {
     return this._isFainted;
   }
 
-  update() {
+  update(delta = 1000 / 60) {
     const { left, right, up, down } = this.cursors;
-    const leftDown = left.isDown || this.wasd.left.isDown;
-    const rightDown = right.isDown || this.wasd.right.isDown;
-    const upDown = up.isDown || this.wasd.up.isDown;
-    const downDown = down.isDown || this.wasd.down.isDown;
-    const anyDown = leftDown || rightDown || upDown || downDown;
+    const held = {
+      left: left.isDown || this.wasd.left.isDown,
+      right: right.isDown || this.wasd.right.isDown,
+      up: up.isDown || this.wasd.up.isDown,
+      down: down.isDown || this.wasd.down.isDown,
+    };
+    const dx = (held.right ? 1 : 0) - (held.left ? 1 : 0);
+    const dy = (held.down ? 1 : 0) - (held.up ? 1 : 0);
+    const moving = dx !== 0 || dy !== 0;
 
     if (this._isFainted) {
-      if (anyDown) this._isFainted = false;
+      if (moving) this._isFainted = false;
       else return;
     }
 
-    let moving = false;
+    if (!moving) {
+      // Stop crisply; the next walk starts on a stepping frame.
+      if (this.wasMoving) this.playIdle();
+      this.wasMoving = false;
+      this.pace = 0;
+      this.stride.stop();
+      return;
+    }
+
+    // Facing: keep the current direction while its key is still held (no
+    // flicker on diagonals); otherwise face the new way, preferring sideways.
+    if (!held[this.direction]) {
+      this.direction = dx < 0 ? 'left' : dx > 0 ? 'right' : dy < 0 ? 'up' : 'down';
+    }
+
+    // Ease in, then move at a constant speed — the same on every refresh rate
+    // and in every direction (diagonals are normalised).
+    this.pace = Math.min(1, this.pace + delta / ACCEL_MS);
+    const len = Math.hypot(dx, dy);
+    const step = (SPEED * this.pace * delta) / 1000;
+    const mx = (dx / len) * step;
+    const my = (dy / len) * step;
 
     // Each axis moves separately so the player slides along walls.
-    if (leftDown) {
-      this.tryMove(Math.max(this.bounds.minX, this.player.x - SPEED), this.player.y);
-      this.direction = 'left';
-      moving = true;
-    } else if (rightDown) {
-      this.tryMove(Math.min(this.bounds.maxX, this.player.x + SPEED), this.player.y);
-      this.direction = 'right';
-      moving = true;
-    }
+    if (mx) this.tryMove(Phaser.Math.Clamp(this.player.x + mx, this.bounds.minX, this.bounds.maxX), this.player.y);
+    if (my) this.tryMove(this.player.x, Phaser.Math.Clamp(this.player.y + my, this.bounds.minY, this.bounds.maxY));
 
-    if (upDown) {
-      this.tryMove(this.player.x, Math.max(this.bounds.minY, this.player.y - SPEED));
-      this.direction = 'up';
-      moving = true;
-    } else if (downDown) {
-      this.tryMove(this.player.x, Math.min(this.bounds.maxY, this.player.y + SPEED));
-      this.direction = 'down';
-      moving = true;
-    }
-
-    if (moving && !this.wasMoving) {
-      this.playWalk();
-    } else if (!moving && this.wasMoving) {
-      this.playIdle();
-    } else if (moving && this.wasMoving) {
-      this.playWalk();
-    }
-    this.wasMoving = moving;
+    // Legs keep stepping against a wall (as in most top-down games), so the
+    // cycle advances by the intended distance, not the distance actually moved.
+    this.stride.step(this.walkKey(), step);
+    this.wasMoving = true;
   }
 
   private hits(x: number, y: number) {
@@ -125,30 +135,18 @@ export class PlayerController {
 
   faint() {
     this._isFainted = true;
+    this.stride.stop();
     this.player.setFlipX(false);
     this.player.play('visitor-faint');
   }
 
-  private playWalk() {
-    const { player } = this;
-    switch (this.direction) {
-      case 'down':
-        player.setFlipX(false);
-        player.play('visitor-walk-forward', true);
-        break;
-      case 'up':
-        player.setFlipX(false);
-        player.play('visitor-walk-back', true);
-        break;
-      case 'left':
-        player.setFlipX(false);
-        player.play('visitor-walk-left', true);
-        break;
-      case 'right':
-        player.setFlipX(false);
-        player.play('visitor-walk-side', true);
-        break;
-    }
+  private walkKey() {
+    return {
+      down: 'visitor-walk-forward',
+      up: 'visitor-walk-back',
+      left: 'visitor-walk-left',
+      right: 'visitor-walk-side',
+    }[this.direction];
   }
 
   private playIdle() {

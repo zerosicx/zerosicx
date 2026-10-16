@@ -182,8 +182,11 @@ export function importSheet(file: string, opts: ImportOptions): RGBA[] {
  * Tidy a downsampled frame: drop pale checkerboard halo on the silhouette,
  * merge isolated speckles into their surroundings, and draw a 1px outline in
  * the darkest palette colour so it matches the hand-made sprites.
+ *
+ * `keepDarkEdges`: where the art already ends in a dark line, use that as the
+ * outline instead of adding another one outside it (which would double it).
  */
-export function tidy(img: RGBA, outline: [number, number, number]) {
+export function tidy(img: RGBA, outline: [number, number, number], keepDarkEdges = false) {
   const { w, h } = img;
   const get = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? -1 : (y * w + x) * 4);
   const opaque = (x: number, y: number) => { const i = get(x, y); return i >= 0 && img.data[i + 3] > 0; };
@@ -216,10 +219,15 @@ export function tidy(img: RGBA, outline: [number, number, number]) {
   // 3. outline around the silhouette
   const before = new Uint8ClampedArray(img.data);
   const was = (x: number, y: number) => { const i = get(x, y); return i >= 0 && before[i + 3] > 0; };
+  const light = (x: number, y: number) => {
+    const i = get(x, y);
+    return i >= 0 && before[i + 3] > 0 && 0.3 * before[i] + 0.59 * before[i + 1] + 0.11 * before[i + 2] >= 70;
+  };
+  const edge = keepDarkEdges ? light : was;
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
       if (was(x, y)) continue;
-      if (was(x + 1, y) || was(x - 1, y) || was(x, y + 1) || was(x, y - 1)) {
+      if (edge(x + 1, y) || edge(x - 1, y) || edge(x, y + 1) || edge(x, y - 1)) {
         const i = get(x, y);
         img.data[i] = outline[0]; img.data[i + 1] = outline[1]; img.data[i + 2] = outline[2]; img.data[i + 3] = 255;
       }

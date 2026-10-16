@@ -21,6 +21,7 @@ export function visitorFrames() {
     rows: 7,
     factor: 5.6,
     pin: [[0xf2, 0xc1, 0x4e], [0xe0, 0x8a, 0x2e]], // the gold star clip is too small to win its own colours
+    keepDarkEdges: true, // her art has its own near-black line; adding ours doubled it
     lying: [26],
     frames: {
       idle_front_0: 0, idle_front_1: [0, -1], idle_front_2: 0, idle_front_3: 3,

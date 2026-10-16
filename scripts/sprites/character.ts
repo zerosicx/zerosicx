@@ -77,10 +77,12 @@ export function importCharacter(
     colours?: number;
     /** Accent colours that must survive quantisation, as [r, g, b]. */
     pin?: number[][];
+    /** The art already has a dark outline: keep it rather than adding a second. */
+    keepDarkEdges?: boolean;
   },
 ) {
   const sprites = importSheet(file, { rows: opts.rows, factor: opts.factor ?? 5.8, colours: opts.colours ?? 24, pin: opts.pin })
-    .map(s => tidy(pad(s), OUTLINE));
+    .map(s => tidy(pad(s), OUTLINE, opts.keepDarkEdges));
   const lying = new Set(opts.lying);
   const waistUp = new Set(opts.waistUp?.frames ?? []);
   const extents = sprites.map(extent);

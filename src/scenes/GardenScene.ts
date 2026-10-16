@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
-import { PlayerController } from '../systems/PlayerController';
+import { PlayerController, PLAYER_FEET, type Rect } from '../systems/PlayerController';
 import { DialogueSystem } from '../systems/DialogueSystem';
 import { loadArticles, Article } from '../data/content-loader';
 import { ArticlePanel } from '../ui/ArticlePanel';
-import { Doors, Fences, GrassBiomePlants, Chests, toFrameMap } from '../data/tilemaps';
-import { SakuraTiles } from '../data/sakura-sprites';
+import { Fences, GrassBiomePlants, Chests, toFrameMap } from '../data/tilemaps';
+import { SakuraDoorGarden, SakuraTiles } from '../data/sakura-sprites';
 
-const DOOR_Y_THRESHOLD = 22;
+const DOOR_Y_THRESHOLD = 12; // walk up into the doorway past this → bedroom
 const PROXIMITY = 28;
 const GARDEN_ENTRY_Y = 28;
 
@@ -16,7 +16,7 @@ const COLS = 20; // 320 / 16
 const ROWS = 15; // 240 / 16
 
 const ST = toFrameMap(SakuraTiles);
-const D = toFrameMap(Doors);
+const D = toFrameMap(SakuraDoorGarden);
 const FE = toFrameMap(Fences);
 const GB = toFrameMap(GrassBiomePlants);
 const CH = toFrameMap(Chests);
@@ -25,16 +25,29 @@ const GRASS_VARIANTS = [ST.grass_0, ST.grass_0, ST.grass_0, ST.grass_0, ST.grass
 const PETAL_VARIANTS = [ST.grass_petals_0, ST.grass_petals_1, ST.grass_petals_2];
 
 // Stone path from the door down through the garden.
-const PATH = new Set<string>(['10,1']);
-for (let row = 2; row <= 12; row++) for (let col = 9; col <= 11; col++) PATH.add(`${col},${row}`);
+const PATH = new Set<string>(['9,1', '10,1']);
+for (let row = 2; row <= 12; row++) for (let col = 8; col <= 11; col++) PATH.add(`${col},${row}`);
 const isPath = (col: number, row: number) => PATH.has(`${col},${row}`);
 
 // Sakura trees (base of trunk) and stone lanterns (base of plinth), in px.
 const TREES: [number, number][] = [[56, 200], [264, 200]];
-const LANTERNS: [number, number][] = [[128, 60], [208, 60]];
+const LANTERNS: [number, number][] = [[112, 60], [208, 60]];
 
-const DOOR_COL = 10;
-const DOOR_CENTER_X = DOOR_COL * TILE + TILE / 2;
+// Fence lines (with the door gap), trunks, lantern plinths and the chest.
+const COLLIDERS: Rect[] = [
+  { x: 16,  y: 20,  w: 128, h: 10 }, // top fence, left of door
+  { x: 176, y: 20,  w: 128, h: 10 }, // top fence, right of door
+  { x: 16,  y: 16,  w: 14,  h: 208 }, // left fence
+  { x: 290, y: 16,  w: 14,  h: 208 }, // right fence
+  { x: 16,  y: 212, w: 288, h: 12 }, // bottom fence
+  ...TREES.map(([x, y]) => ({ x: x - 6, y: y - 6, w: 12, h: 6 })),
+  ...LANTERNS.map(([x, y]) => ({ x: x - 6, y: y - 6, w: 12, h: 6 })),
+  { x: 66, y: 38, w: 12, h: 8 }, // chest
+];
+
+// Two-tile sliding door in the top fence, centred on the path
+const DOOR_COLS = [9, 10];
+const DOOR_CENTER_X = 160;
 const DOOR_ROW = 1;
 const DOOR_CENTER_Y = DOOR_ROW * TILE + TILE / 2;
 const DOOR_RANGE_FAR = 48;
@@ -91,10 +104,10 @@ export class GardenScene extends Phaser.Scene {
     this.addPetals();
 
     const spawnY = data?.from === 'bedroom' ? GARDEN_ENTRY_Y : GARDEN_ENTRY_Y;
-    this.player = this.add.sprite(160, spawnY, 'visitor', 0).setDepth(10);
+    this.player = this.add.sprite(160, spawnY, 'visitor', 0);
     this.controller = new PlayerController(this, this.player, {
-      minX: 30, maxX: 286, minY: 18, maxY: 206,
-    });
+      minX: 30, maxX: 286, minY: 8, maxY: 206,
+    }, COLLIDERS);
 
 
     try {
@@ -123,7 +136,8 @@ export class GardenScene extends Phaser.Scene {
       this.doorSprite.setFrame(D.door_closed);
     }
 
-    if (this.player.y <= DOOR_Y_THRESHOLD) {
+    // Only the doorway leads inside; the fence collider keeps her out of the rest of that row.
+    if (this.player.y <= DOOR_Y_THRESHOLD && Math.abs(this.player.x - DOOR_CENTER_X) < 16) {
       this.articlePanel.hide();
       this.scene.start('BedroomScene', { from: 'garden' });
     }
@@ -175,15 +189,15 @@ export class GardenScene extends Phaser.Scene {
 
     // ── Door (placed after grass so it's not covered) ─────────────────
     this.doorSprite = this.add
-      .image(DOOR_COL * TILE, DOOR_ROW * TILE, 'doors', D.door_closed)
+      .image(DOOR_COLS[0] * TILE, DOOR_ROW * TILE, 'door-garden', D.door_closed)
       .setOrigin(0, 0)
-      .setDepth(20);
+      .setDepth((DOOR_ROW + 1) * TILE);
 
     // ── Fences (full perimeter with door gap at top) ───────────────────
-    // Top: left section → gap at DOOR_COL → right section
+    // Top: left section → two-tile door gap → right section
     this.placeFence(1, 1, FE.fence_top_left_2);
-    for (let col = 2; col <= DOOR_COL - 1; col++) this.placeFence(col, 1, FE.fence_middle_2);
-    for (let col = DOOR_COL + 1; col <= COLS - 3; col++) this.placeFence(col, 1, FE.fence_middle_2);
+    for (let col = 2; col < DOOR_COLS[0]; col++) this.placeFence(col, 1, FE.fence_middle_2);
+    for (let col = DOOR_COLS[1] + 1; col <= COLS - 3; col++) this.placeFence(col, 1, FE.fence_middle_2);
     this.placeFence(COLS - 2, 1, FE.fence_top_right_2);
 
     // Sides
@@ -201,7 +215,7 @@ export class GardenScene extends Phaser.Scene {
       const glow = this.add.image(x, y - 19, 'sakura-glow')
         .setBlendMode(Phaser.BlendModes.ADD)
         .setAlpha(0.1)
-        .setDepth(31);
+        .setDepth(1001);
       this.tweens.add({
         targets: glow, alpha: 0.16, duration: 900 + x, yoyo: true, repeat: -1, ease: 'Sine.inOut',
       });
@@ -210,13 +224,14 @@ export class GardenScene extends Phaser.Scene {
 
     // ── Sakura trees (drawn above fences; fade when the player walks under) ─
     for (const [x, y] of TREES) {
-      this.canopies.push(this.add.image(x, y, 'sakura-tree').setOrigin(0.5, 0.95).setDepth(25));
+      this.canopies.push(this.add.image(x, y, 'sakura-tree').setOrigin(0.5, 0.95).setDepth(y));
     }
 
     // ── Recent articles chest ──────────────────────────────────────────
     this.chestSprite = this.add
       .image(4 * TILE, 2 * TILE, 'chest', CH.small_chest)
-      .setOrigin(0, 0);
+      .setOrigin(0, 0)
+      .setDepth(3 * TILE);
 
   }
 
@@ -244,7 +259,7 @@ export class GardenScene extends Phaser.Scene {
       ...base,
       x: { min: 0, max: 380 },
       frequency: 600,
-    }).setDepth(30);
+    }).setDepth(1000); // petals drift over everything
 
     for (const [x, y] of TREES) {
       this.add.particles(x, y - 60, 'sakura-petals', {
@@ -253,14 +268,15 @@ export class GardenScene extends Phaser.Scene {
         x: { min: -26, max: 26 },
         y: { min: -10, max: 20 },
         frequency: 700,
-      }).setDepth(30);
+      }).setDepth(1000); // petals drift over everything
     }
   }
 
   /** Lanterns sort against the player; canopies go see-through when walked under. */
   private updateSakuraDepth() {
     const { x, y } = this.player;
-    for (const l of this.lanterns) l.setDepth(y < l.y ? 15 : 5);
+    this.player.setDepth(y + PLAYER_FEET);
+    for (const l of this.lanterns) l.setDepth(l.y);
     for (const c of this.canopies) {
       const under = Math.abs(x - c.x) < 30 && y < c.y - 6 && y > c.y - 72;
       c.setAlpha(under ? 0.65 : 1);
@@ -268,7 +284,8 @@ export class GardenScene extends Phaser.Scene {
   }
 
   private placeFence(col: number, row: number, frame: number) {
-    this.add.image(col * TILE, row * TILE, 'fences', frame).setOrigin(0, 0).setDepth(20);
+    // Depth = the fence's bottom edge, so the player sorts in front of or behind it.
+    this.add.image(col * TILE, row * TILE, 'fences', frame).setOrigin(0, 0).setDepth((row + 1) * TILE);
   }
 
   private placeFlowers() {

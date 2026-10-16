@@ -41,6 +41,50 @@ export const PALETTE = {
   glow0: '#e9875c',
   glow1: '#ffc76e',
   glow2: '#fff0b8',
+
+  // Skin, blush-warm shadows
+  skin0: '#e39a8d',
+  skin1: '#f9cdb8',
+  skin2: '#fff1e6',
+
+  // Eyes
+  eye0: '#1d1f5e',
+  eye1: '#3d57c0',
+  eye2: '#79c2ee',
+
+  // Cloth darks (skirt, socks, shorts)
+  navy0: '#24212f',
+  navy1: '#363243',
+  navy2: '#4d4860',
+
+  // Ribbon red
+  red0: '#9c2f45',
+  red1: '#d24c5f',
+
+  // Interior wood — warmer and lighter than bark
+  wood0: '#4f3330',
+  wood1: '#74493b',
+  wood2: '#9b6a4c',
+  wood3: '#c69469',
+  wood4: '#e8c493',
+
+  // Paper, linen, blouse whites
+  cream0: '#d8c9c9',
+  cream1: '#efe4e1',
+  cream2: '#fffaf7',
+
+  // Bengal coat
+  tan0: '#6b3f22',
+  tan1: '#a8672f',
+  tan2: '#d99a4e',
+  tan3: '#f2cc8a',
+  tan4: '#fbe9c7',
+
+  // Screens
+  screen0: '#1b2a44',
+  screen1: '#2a5d7c',
+  screen2: '#4fb0c0',
+  screen3: '#a9eee0',
 } as const;
 
 export type Colour = keyof typeof PALETTE;

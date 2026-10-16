@@ -85,6 +85,25 @@ export class Canvas {
     return this;
   }
 
+  /** Rotate 90° clockwise (exact for pixel art). */
+  rotate90() {
+    const out = new Canvas(this.h, this.w);
+    this.each((x, y, c) => out.set(this.h - 1 - y, x, c));
+    return out;
+  }
+
+  /** Mirror horizontally. */
+  flipX() {
+    const out = new Canvas(this.w, this.h);
+    this.each((x, y, c) => out.set(this.w - 1 - x, y, c));
+    return out;
+  }
+
+  /** Outline only where an opaque, non-ink pixel touches transparency. */
+  seal(colour: Colour = 'ink') {
+    return this.outline(c => (c === colour ? null : colour));
+  }
+
   save(file: string) {
     const png = new PNG({ width: this.w, height: this.h });
     this.each((x, y, c) => {
@@ -100,6 +119,9 @@ export class Canvas {
     fs.writeFileSync(file, PNG.sync.write(png));
   }
 }
+
+/** Mirror left-half rows into full symmetric rows. */
+export const mirror = (rows: string[]) => rows.map(r => r + [...r].reverse().join(''));
 
 // ─── Noise & dithering ──────────────────────────────────────────────────────
 

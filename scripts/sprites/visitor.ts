@@ -11,7 +11,7 @@ import { importCharacter } from './character.ts';
  *   row 4: 12–15 walk right
  *   row 5: 16–19 walk away (back)
  *   row 6: 20–23 back idle (22 = head turned slightly)
- *   row 7: 24 happy · 25 surprised · 26 fainted (lying)
+ *   row 7: 24 happy · 25 surprised · 26 fainted (lying; turned head-up for the bed)
  *
  * Bobs are added here ([index, dy]) rather than trusted from the sheet, since
  * frames are re-anchored onto one floor line on import.
@@ -36,6 +36,8 @@ export function visitorFrames() {
       // reactions
       happy_0: 24, surprised_0: 25,
       faint_0: 0, faint_1: 3, faint_2: [3, 2], faint_3: 26,
+      // tucked into the bed, which runs top to bottom: head up on the pillow
+      bed_0: [26, 0, 'cw'],
     },
   });
 }

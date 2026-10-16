@@ -13,7 +13,7 @@ import { buildTree } from './tree.ts';
 import { buildGlow, buildLantern, buildMailbox, buildPetals, buildShadow } from './props.ts';
 import { hostFrames } from './host.ts';
 import { visitorFrames } from './visitor.ts';
-import { packRaw, writePng } from './importSheet.ts';
+import { crop, packRaw, writePng } from './importSheet.ts';
 import { catFrames } from './cat.ts';
 import { computerFrames, doorFrames, furniture, roomTiles } from './interior.ts';
 
@@ -37,18 +37,24 @@ sheet('SakuraTiles', 'tiles.png', buildTiles(), 8);
 sheet('SakuraLantern', 'lantern.png', buildLantern(), 2);
 sheet('SakuraPetals', 'petals.png', buildPetals(), 4);
 sheet('SakuraMailbox', 'mailbox.png', buildMailbox(), 3);
-sheet('SakuraCat', 'cat.png', catFrames(), 8);
 sheet('SakuraRoom', 'room.png', roomTiles(), 8);
 sheet('SakuraComputer', 'computer.png', computerFrames(), 5);
 sheet('SakuraDoor', 'door-room.png', doorFrames('grass2'), 3); // seen from inside: garden beyond
 sheet('SakuraDoorGarden', 'door-garden.png', doorFrames('wood3'), 3); // seen from outside: floorboards
 for (const [name, canvas] of Object.entries(furniture())) single(`room-${name}.png`, canvas);
 // Imported characters keep their own colours, so they're packed outside the palette-locked Canvas.
-for (const [name, file, frames] of [['SakuraHost', 'host.png', hostFrames()], ['SakuraVisitor', 'visitor.png', visitorFrames()]] as const) {
+const host = hostFrames();
+for (const [name, file, frames] of [
+  ['SakuraHost', 'host.png', host],
+  ['SakuraVisitor', 'visitor.png', visitorFrames()],
+  ['SakuraCat', 'cat.png', catFrames()],
+] as const) {
   const { sheet: img, meta } = packRaw(frames, 8);
   writePng(path.join(OUT, file), img);
   sheets[name] = { sourceName: file, ...meta };
 }
+// Dialogue portrait: her front idle frame, cropped to her silhouette.
+writePng(path.join(OUT, 'host-portrait.png'), crop(host.find(f => f.name === 'idle_front_0')!.img));
 single('tree.png', buildTree());
 single('glow.png', buildGlow());
 single('shadow.png', buildShadow());

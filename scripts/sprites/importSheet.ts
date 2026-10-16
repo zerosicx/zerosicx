@@ -237,6 +237,19 @@ export function tidy(img: RGBA, outline: [number, number, number], keepDarkEdges
   return img;
 }
 
+/** Trim a frame to its opaque pixels. */
+export function crop(img: RGBA): RGBA {
+  let x0 = img.w, x1 = -1, y0 = img.h, y1 = -1;
+  for (let y = 0; y < img.h; y++)
+    for (let x = 0; x < img.w; x++)
+      if (img.data[(y * img.w + x) * 4 + 3]) {
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+      }
+  const out = blank(x1 - x0 + 1, y1 - y0 + 1);
+  for (let y = y0; y <= y1; y++) out.data.set(img.data.subarray((y * img.w + x0) * 4, (y * img.w + x1 + 1) * 4), (y - y0) * out.w * 4);
+  return out;
+}
+
 /** Pack equal-size frames into a sheet; returns the image and tilemaps.ts-style metadata. */
 export function packRaw(frames: { name: string; img: RGBA }[], columns: number) {
   const fw = frames[0].img.w, fh = frames[0].img.h;

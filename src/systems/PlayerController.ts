@@ -37,6 +37,7 @@ export class PlayerController {
   private direction: Direction = 'down';
   private wasMoving = false;
   private _isFainted = false;
+  private awaitRelease = false; // resting: ignore keys until they've all been let go
   private wasd: {
     up: Phaser.Input.Keyboard.Key;
     down: Phaser.Input.Keyboard.Key;
@@ -86,6 +87,12 @@ export class PlayerController {
     const moving = dx !== 0 || dy !== 0;
 
     if (this._isFainted) {
+      // The key that walked her into bed is usually still held: only a fresh
+      // press, after every key has been released, wakes her up.
+      if (this.awaitRelease) {
+        if (!moving) this.awaitRelease = false;
+        return;
+      }
       if (moving) this._isFainted = false;
       else return;
     }
@@ -133,8 +140,17 @@ export class PlayerController {
     if (!this.hits(x, y) || this.hits(this.player.x, this.player.y)) this.player.setPosition(x, y);
   }
 
+  /** Lie still without the faint animation (e.g. tucked into bed); any movement key wakes her. */
+  rest() {
+    this._isFainted = true;
+    this.awaitRelease = true;
+    this.wasMoving = false;
+    this.stride.stop();
+  }
+
   faint() {
     this._isFainted = true;
+    this.awaitRelease = true;
     this.stride.stop();
     this.player.setFlipX(false);
     this.player.play('visitor-faint');

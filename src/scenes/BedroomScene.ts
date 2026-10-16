@@ -7,7 +7,7 @@ import { ThoughtBubble } from '../ui/ThoughtBubble';
 import { loadProjects, Project } from '../data/content-loader';
 import { MUSINGS, type MusingSpot } from '../data/musings';
 import { toFrameMap } from '../data/tilemaps';
-import { SakuraDoor, SakuraHost, SakuraRoom } from '../data/sakura-sprites';
+import { SakuraDoor, SakuraHost, SakuraRoom, SakuraVisitor } from '../data/sakura-sprites';
 
 // ─── Object dialogue lines ───────────────────────────────────────────────────
 const DIALOGUES: Record<string, string[]> = {
@@ -46,6 +46,7 @@ const ROWS = 15; // 240 / 16
 const R = toFrameMap(SakuraRoom);
 const DR = toFrameMap(SakuraDoor);
 const HF = toFrameMap(SakuraHost);
+const VF = toFrameMap(SakuraVisitor);
 const FLOORS = [R.floor_0, R.floor_0, R.floor_1, R.floor_2];
 
 // Two-tile sliding door, centred under the window
@@ -57,6 +58,9 @@ const DOOR_RANGE_NEAR = 32;
 
 // Furniture footprints the player can't walk through (the bed stays walkable —
 // flopping onto it is a feature).
+/** The bed's footprint: solid, and walking into it tucks you in. */
+const BED: Rect = { x: 31, y: 150, w: 34, h: 50 };
+
 const COLLIDERS: Rect[] = [
   { x: 24,  y: 40, w: 32, h: 12 }, // bookshelf
   { x: 84,  y: 36, w: 28, h: 12 }, // dresser
@@ -64,9 +68,18 @@ const COLLIDERS: Rect[] = [
   { x: 251, y: 56, w: 30, h: 10 }, // chair
   { x: 294, y: 204, w: 12, h: 10 }, // plant
   { x: 20,  y: 102, w: 12, h: 10 }, // plant
+  BED,
   { x: 16,  y: 226, w: 128, h: 14 }, // bottom wall, left of the door
   { x: 176, y: 226, w: 128, h: 14 }, // bottom wall, right of the door
 ];
+
+// ─── Bed ─────────────────────────────────────────────────────────────────────
+const BED_BASE_Y = 200;                      // bottom of the bed sprite
+const HEADBOARD_BASE_Y = 158;                // the one tall part, y-sorted on its own
+const BED_SLEEP = { x: 48, y: 173 };         // visitor's sprite centre when tucked in: face on the pillow, above the fold
+const BED_EXIT = { x: 73, y: 167 };          // where she stands up, beside the bed (inside the re-arm gap)
+const BED_TOUCH = 2;                         // feet this close to the bed → climb in (> one 1.5 px step)
+const BED_REARM = 6;                         // …and must step this far away before it can happen again
 
 // ─── Host character routine ──────────────────────────────────────────────────
 const AISLE_Y = 90;                          // open floor between furniture rows
@@ -76,6 +89,8 @@ const HOST_HEAD = 19;                        // sprite centre → top of head
 const CHAIR_SEAT_Y = 58;                     // seated: nothing of her draws below the seat
 const BESIDE_CHAIR = { x: 238, y: 62 };      // where she stands up / sits down
 const CUSHION = { x: 214, y: 186 };
+const CAT_FEET = 14;                         // cat sprite centre → paws (34 px tall frames)
+const NAP = { x: CUSHION.x, y: CUSHION.y + 6 - CAT_FEET }; // curled up on the cushion
 type Spot = { x: number; y: number; face: Direction; musing: MusingSpot };
 const SPOTS: Spot[] = [
   { x: 160, y: 38,  face: 'up',   musing: 'window' },
@@ -107,6 +122,9 @@ export class BedroomScene extends Phaser.Scene {
   private screenGlow!: Phaser.GameObjects.Image;
   private chair!: Phaser.GameObjects.Image;
   private computerPanel!: ComputerPanel;
+  private blanket!: Phaser.GameObjects.Image;
+  private inBed = false;
+  private bedArmed = true;
   private projects: Project[] | null = null;
   private activeDialogue: string[] = [];
   private dialogueIndex = 0;
@@ -118,6 +136,8 @@ export class BedroomScene extends Phaser.Scene {
 
   create(data?: { from?: 'garden' }) {
     this.inDialogue = false;
+    this.inBed = false;
+    this.bedArmed = true;
     this.activeDialogue = [];
     this.dialogueIndex = 0;
     this.hostSeated = false;
@@ -161,13 +181,7 @@ export class BedroomScene extends Phaser.Scene {
 
     if (this.inDialogue) return;
     this.controller.update(delta);
-
-    // Faint when player walks onto the bed (x 32–64, y 144–208)
-    const onBed = this.player.x >= 32 && this.player.x <= 64
-      && this.player.y >= 144 && this.player.y <= 208;
-    if (onBed && !this.controller.isFainted) {
-      this.controller.faint();
-    }
+    this.updateBed();
 
     // Animate door based on player proximity
     const doorDist = Phaser.Math.Distance.Between(
@@ -225,7 +239,12 @@ export class BedroomScene extends Phaser.Scene {
     prop('room-bookshelf', 40, 52);
     prop('room-dresser', 98, 48);
     const desk = prop('room-desk', 266, 50);
-    prop('room-bed', 48, 200);
+    // Bed in layers: base at floor level (characters always draw over it), the
+    // headboard y-sorted like any tall prop, and a blanket shown over whoever's
+    // tucked in.
+    this.add.image(48, BED_BASE_Y, 'room-bed').setOrigin(0.5, 1).setDepth(1);
+    this.add.image(48, BED_BASE_Y, 'room-bed-headboard').setOrigin(0.5, 1).setDepth(HEADBOARD_BASE_Y);
+    this.blanket = this.add.image(48, BED_BASE_Y, 'room-bed-blanket').setOrigin(0.5, 1).setVisible(false);
     prop('room-plant', 300, 214);
     prop('room-plant', 26, 112);
     this.chair = prop('room-chair', 266, 66);
@@ -241,8 +260,51 @@ export class BedroomScene extends Phaser.Scene {
 
   private sortDepths() {
     this.player.setDepth(this.player.y + PLAYER_FEET);
-    this.catSprite.setDepth(this.catNapping ? CUSHION.y + 4 : this.catSprite.y + 7);
+    this.blanket.setDepth(this.player.depth + 1); // only visible while she's tucked in
+    this.catSprite.setDepth(this.catNapping ? CUSHION.y + 4 : this.catSprite.y + CAT_FEET);
     this.host.setDepth(this.hostSeated ? this.chair.depth - 1 : this.host.y + HOST_FEET);
+  }
+
+  // ── Bed ────────────────────────────────────────────────────────────────────
+
+  /** Gap between the visitor's feet and the bed, in px (0 = touching). */
+  private bedGap() {
+    const l = this.player.x - 4, r = this.player.x + 4;
+    const t = this.player.y + PLAYER_FEET - 5, b = this.player.y + PLAYER_FEET;
+    const dx = Math.max(BED.x - r, l - (BED.x + BED.w), 0);
+    const dy = Math.max(BED.y - b, t - (BED.y + BED.h), 0);
+    return Math.max(dx, dy);
+  }
+
+  private updateBed() {
+    if (this.inBed) {
+      // Any movement key wakes her (the controller clears its resting state).
+      if (!this.controller.isFainted) this.getOutOfBed();
+      return;
+    }
+    const gap = this.bedGap();
+    if (gap > BED_REARM) this.bedArmed = true;
+    if (this.bedArmed && gap <= BED_TOUCH && !this.controller.isFainted) this.getIntoBed();
+  }
+
+  /** A drowsy blink beside the bed, then tucked in under the blanket. */
+  private getIntoBed() {
+    this.bedArmed = false;
+    this.controller.rest();
+    this.player.stop().setFlipX(false).setFrame(VF.faint_1);
+    this.time.delayedCall(280, () => {
+      if (!this.controller.isFainted) return; // she walked off before settling
+      this.inBed = true;
+      this.player.setPosition(BED_SLEEP.x, BED_SLEEP.y).setFrame(VF.bed_0);
+      this.blanket.setVisible(true);
+    });
+  }
+
+  private getOutOfBed() {
+    this.inBed = false;
+    this.bedArmed = false; // she has to step away before the bed can catch her again
+    this.blanket.setVisible(false);
+    this.player.setPosition(BED_EXIT.x, BED_EXIT.y);
   }
 
   // ── Host character ─────────────────────────────────────────────────────────
@@ -362,8 +424,8 @@ export class BedroomScene extends Phaser.Scene {
       const roll = Math.random();
       if (roll < 0.25) {
         await this.cat.walk([
-          { x: CUSHION.x, y: this.catSprite.y },
-          { x: CUSHION.x, y: CUSHION.y },
+          { x: NAP.x, y: this.catSprite.y },
+          { x: NAP.x, y: NAP.y },
         ]);
         this.catNapping = true;
         this.catSprite.setFlipX(false).play('cat-sleep');

@@ -306,6 +306,28 @@ function bed() {
   return c.seal();
 }
 
+/** Copy only rows [from, to) of a canvas, keeping its size so layers line up. */
+function rows(src: Canvas, from: number, to: number) {
+  const c = new Canvas(src.w, src.h);
+  src.each((x, y, col) => { if (col && y >= from && y < to) c.set(x, y, col); });
+  return c;
+}
+
+/**
+ * The bed is low and flat, so it's drawn in layers rather than y-sorted as one
+ * object: the whole bed sits at floor level (characters always draw over it),
+ * the headboard is the one tall part and y-sorts on its own, and the blanket
+ * (sheet fold down to the footboard) is drawn over whoever is tucked in.
+ */
+function bedLayers() {
+  const full = bed();
+  return {
+    bed: full,
+    'bed-headboard': rows(full, 0, 11),
+    'bed-blanket': rows(full, 23, full.h), // from mid-way down the turned-down sheet
+  };
+}
+
 function rug() {
   const c = new Canvas(76, 44);
   c.each((x, y) => {
@@ -394,7 +416,7 @@ export function furniture(): Record<string, Canvas> {
     dresser: dresser(),
     desk: desk(),
     chair: chair(),
-    bed: bed(),
+    ...bedLayers(),
     rug: rug(),
     window: windowArt(),
     clock: clock(),

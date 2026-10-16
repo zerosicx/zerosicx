@@ -3,7 +3,8 @@ import { toFrameMap } from '../data/tilemaps';
 import { SakuraCat, SakuraHost, SakuraVisitor } from '../data/sakura-sprites';
 
 export const ROOM_FURNITURE = [
-  'bookshelf', 'dresser', 'desk', 'chair', 'bed', 'rug', 'window', 'clock', 'painting', 'plant', 'cushion',
+  'bookshelf', 'dresser', 'desk', 'chair', 'bed', 'bed-headboard', 'bed-blanket', 'rug', 'window', 'clock',
+  'painting', 'plant', 'cushion',
 ] as const;
 
 /**
@@ -37,7 +38,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('mailbox', `${sakura}/mailbox.png`, { frameWidth: 16, frameHeight: 24 });
     this.load.spritesheet('visitor', `${sakura}/visitor.png`, { frameWidth: SakuraVisitor.tileSize.w, frameHeight: SakuraVisitor.tileSize.h });
     this.load.spritesheet('host', `${sakura}/host.png`, { frameWidth: SakuraHost.tileSize.w, frameHeight: SakuraHost.tileSize.h });
-    this.load.spritesheet('cat', `${sakura}/cat.png`, { frameWidth: 24, frameHeight: 20 });
+    this.load.spritesheet('cat', `${sakura}/cat.png`, { frameWidth: SakuraCat.tileSize.w, frameHeight: SakuraCat.tileSize.h });
     this.load.spritesheet('sakura-room', `${sakura}/room.png`, { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('computer', `${sakura}/computer.png`, { frameWidth: 26, frameHeight: 24 });
     this.load.spritesheet('door-room', `${sakura}/door-room.png`, { frameWidth: 32, frameHeight: 16 });
@@ -91,10 +92,12 @@ export class BootScene extends Phaser.Scene {
     const CF = toFrameMap(SakuraCat);
     seq('cat-idle-forward', 'cat', CF, 'idle_front', IDLE, 3);
     seq('cat-idle-side',    'cat', CF, 'idle_side',  IDLE, 3);
-    seq('cat-idle-back',    'cat', CF, 'idle_back',  [0, 1], 2);
-    seq('cat-walk-forward', 'cat', CF, 'walk_front', [0, 1], 5);
+    seq('cat-idle-left',    'cat', CF, 'idle_left',  [0], 1);
+    seq('cat-idle-back',    'cat', CF, 'idle_back',  [0, 0, 0, 1], 2);
+    seq('cat-walk-forward', 'cat', CF, 'walk_front', WALK, 8);
     seq('cat-walk-side',    'cat', CF, 'walk_side',  WALK, 8);
-    seq('cat-walk-back',    'cat', CF, 'walk_back',  [0, 1], 5);
+    seq('cat-walk-left',    'cat', CF, 'walk_left',  WALK, 8);
+    seq('cat-walk-back',    'cat', CF, 'walk_back',  WALK, 8);
     seq('cat-sleep',        'cat', CF, 'sleep',      [0, 1], 1);
 
     // ── Sakura animations ──

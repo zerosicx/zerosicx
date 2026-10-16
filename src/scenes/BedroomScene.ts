@@ -1,13 +1,13 @@
 import Phaser from 'phaser';
 import { PlayerController, PLAYER_FEET, type Rect } from '../systems/PlayerController';
-import { DialogueSystem } from '../systems/DialogueSystem';
+import { DialogueSystem, SPEAKERS, type Speaker } from '../systems/DialogueSystem';
 import { Walker, type Direction } from '../systems/Walker';
 import { ComputerPanel } from '../ui/ComputerPanel';
 import { ThoughtBubble } from '../ui/ThoughtBubble';
 import { loadProjects, Project } from '../data/content-loader';
-import { MUSINGS, type MusingSpot } from '../data/musings';
+import { GREETINGS, MITCHY_MUSINGS, MUSINGS, type MitchySpot, type MusingSpot } from '../data/musings';
 import { toFrameMap } from '../data/tilemaps';
-import { SakuraDoor, SakuraHost, SakuraRoom, SakuraVisitor } from '../data/sakura-sprites';
+import { SakuraDoor, SakuraHost, SakuraMitchy, SakuraRoom, SakuraVisitor } from '../data/sakura-sprites';
 
 // ─── Object dialogue lines ───────────────────────────────────────────────────
 const DIALOGUES: Record<string, string[]> = {
@@ -47,6 +47,7 @@ const R = toFrameMap(SakuraRoom);
 const DR = toFrameMap(SakuraDoor);
 const HF = toFrameMap(SakuraHost);
 const VF = toFrameMap(SakuraVisitor);
+const MF = toFrameMap(SakuraMitchy);
 const FLOORS = [R.floor_0, R.floor_0, R.floor_1, R.floor_2];
 
 // Two-tile sliding door, centred under the window
@@ -86,6 +87,12 @@ const AISLE_Y = 90;                          // open floor between furniture row
 const SEAT = { x: 266, y: 44 };              // seated sprite position at the desk
 const HOST_FEET = 18;                        // sprite centre → feet (42 px tall frames)
 const HOST_HEAD = 19;                        // sprite centre → top of head
+
+// ─── Mitchy ──────────────────────────────────────────────────────────────────
+const MITCHY_FEET = 18;                      // sprite centre → feet (42 px tall frames)
+const MITCHY_HEAD = 20;                      // sprite centre → top of his hair
+const BY_BUN = { x: 222, y: 66 };            // beside Hannah's desk, looking over at her
+const COMFY_SPOTS = [{ x: 132, y: 122 }, { x: 196, y: 150 }]; // on the rug, by the cushion
 const CHAIR_SEAT_Y = 58;                     // seated: nothing of her draws below the seat
 const BESIDE_CHAIR = { x: 238, y: 62 };      // where she stands up / sits down
 const CUSHION = { x: 214, y: 186 };
@@ -103,7 +110,9 @@ const SPOTS: Spot[] = [
  * Main hub of the site. Player navigates around the bedroom and interacts
  * with objects. The host character potters about on her own — coding at the
  * desk, wandering to the window or bookshelf, checking on the cat — and
- * thinks out loud in a bubble that never blocks the player.
+ * thinks out loud in a bubble that never blocks the player. Mitchy hangs out
+ * too: checking on "bun", playing his handheld, musing about the gym and
+ * Pokémon. The visitor can talk to either of them.
  */
 export class BedroomScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
@@ -118,6 +127,13 @@ export class BedroomScene extends Phaser.Scene {
   private hostSeated = false;
   private hostSpot: MusingSpot = 'desk';
   private bubble!: ThoughtBubble;
+  private mitchy!: Phaser.GameObjects.Sprite;
+  private mitchyWalker!: Walker;
+  private mitchyBubble!: ThoughtBubble;
+  private mitchySpot: MitchySpot = 'pokemon';
+  /** Who the visitor is talking to (they stop and face her), and who she's met. */
+  private talkingTo: 'hannah' | 'mitchy' | null = null;
+  private met = { hannah: false, mitchy: false };
   private computer!: Phaser.GameObjects.Image;
   private screenGlow!: Phaser.GameObjects.Image;
   private chair!: Phaser.GameObjects.Image;
@@ -129,6 +145,9 @@ export class BedroomScene extends Phaser.Scene {
   private activeDialogue: string[] = [];
   private dialogueIndex = 0;
   private inDialogue = false;
+  private activeSpeaker: Speaker = SPEAKERS.hannah;
+  private onLine: ((i: number) => void) | null = null;
+  private onDialogueEnd: (() => void) | null = null;
 
   constructor() {
     super({ key: 'BedroomScene' });
@@ -136,6 +155,7 @@ export class BedroomScene extends Phaser.Scene {
 
   create(data?: { from?: 'garden' }) {
     this.inDialogue = false;
+    this.talkingTo = null;
     this.inBed = false;
     this.bedArmed = true;
     this.activeDialogue = [];
@@ -148,6 +168,7 @@ export class BedroomScene extends Phaser.Scene {
     if (label) label.textContent = 'bedroom';
     this.drawRoom();
     this.addHost();
+    this.addMitchy();
     this.addCat();
 
     const spawnY = data?.from === 'garden' ? DOOR_REENTRY_Y : 160;
@@ -158,7 +179,11 @@ export class BedroomScene extends Phaser.Scene {
     this.dialogue = new DialogueSystem();
 
     this.bubble = new ThoughtBubble();
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.bubble.destroy());
+    this.mitchyBubble = new ThoughtBubble();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.bubble.destroy();
+      this.mitchyBubble.destroy();
+    });
 
     // Input
     this.input.keyboard?.on('keydown-SPACE', () => this.onAction());
@@ -166,17 +191,24 @@ export class BedroomScene extends Phaser.Scene {
     this.input.on('pointerdown', () => this.onAction());
 
     this.runHost();
+    this.runMitchy();
     this.runCat();
     this.scheduleThought();
+    this.scheduleMitchyThought();
     this.scheduleScreen();
   }
 
   update(_time: number, delta: number) {
     this.cat.update(delta);
-    this.hostWalker.update(delta);
+    // Whoever the visitor is talking to stands still until the chat ends.
+    if (this.talkingTo !== 'hannah') this.hostWalker.update(delta);
+    if (this.talkingTo !== 'mitchy') this.mitchyWalker.update(delta);
     this.sortDepths();
     if (this.bubble.visible) {
       this.bubble.place(this.game.canvas, this.scale.width, this.host.x, this.host.y - HOST_HEAD);
+    }
+    if (this.mitchyBubble.visible) {
+      this.mitchyBubble.place(this.game.canvas, this.scale.width, this.mitchy.x, this.mitchy.y - MITCHY_HEAD);
     }
 
     if (this.inDialogue) return;
@@ -263,6 +295,7 @@ export class BedroomScene extends Phaser.Scene {
     this.blanket.setDepth(this.player.depth + 1); // only visible while she's tucked in
     this.catSprite.setDepth(this.catNapping ? CUSHION.y + 4 : this.catSprite.y + CAT_FEET);
     this.host.setDepth(this.hostSeated ? this.chair.depth - 1 : this.host.y + HOST_FEET);
+    this.mitchy.setDepth(this.mitchy.y + MITCHY_FEET);
   }
 
   // ── Bed ────────────────────────────────────────────────────────────────────
@@ -392,7 +425,8 @@ export class BedroomScene extends Phaser.Scene {
 
   private scheduleThought() {
     this.time.delayedCall(Phaser.Math.Between(9000, 20000), () => {
-      if (!this.bubble.visible) this.think();
+      // one thought at a time, and never over a conversation
+      if (!this.bubble.visible && !this.mitchyBubble.visible && !this.inDialogue) this.think();
       this.scheduleThought();
     });
   }
@@ -408,6 +442,82 @@ export class BedroomScene extends Phaser.Scene {
         this.screenGlow.setAlpha(0.06);
       }
       this.scheduleScreen();
+    });
+  }
+
+  // ── Mitchy ──────────────────────────────────────────────────────────────────
+
+  private addMitchy() {
+    this.mitchy = this.add.sprite(COMFY_SPOTS[0].x, COMFY_SPOTS[0].y, 'mitchy', 0);
+    this.mitchyWalker = new Walker(this.mitchy, 'mitchy', 0.03, 6);
+    this.mitchyWalker.face('down');
+  }
+
+  /** Walk via the open aisle so he never cuts through furniture. */
+  private mitchyWalkTo(x: number, y: number) {
+    return this.mitchyWalker.walk([
+      { x: this.mitchy.x, y: AISLE_Y },
+      { x, y: AISLE_Y },
+      { x, y },
+    ]);
+  }
+
+  /** Hold here while the visitor is talking to him. */
+  private async untilFree() {
+    while (this.talkingTo === 'mitchy') await this.wait(200);
+  }
+
+  private async runMitchy() {
+    await this.wait(Phaser.Math.Between(2000, 5000));
+    for (;;) {
+      await this.untilFree();
+      const roll = Math.random();
+      if (roll < 0.3) {
+        // check in on bun at her desk
+        await this.mitchyWalkTo(BY_BUN.x, BY_BUN.y);
+        await this.untilFree();
+        this.mitchyWalker.face('right');
+        this.mitchySpot = 'bun';
+        if (this.hostSeated) this.mitchy.stop().setFlipX(false).setFrame(MF.happy_0);
+        if (Math.random() < 0.7) this.mitchyThink();
+        await this.wait(Phaser.Math.Between(4000, 7000));
+      } else if (roll < 0.6) {
+        // a few rounds on his handheld somewhere comfy
+        const spot = COMFY_SPOTS[Phaser.Math.Between(0, COMFY_SPOTS.length - 1)];
+        await this.mitchyWalkTo(spot.x, spot.y);
+        await this.untilFree();
+        this.mitchyWalker.face('down');
+        this.mitchy.play('mitchy-play');
+        this.mitchySpot = Math.random() < 0.5 ? 'play' : 'pokemon';
+        await this.wait(Phaser.Math.Between(7000, 12000));
+        if (this.talkingTo !== 'mitchy') this.mitchyWalker.face('down');
+      } else if (roll < 0.85) {
+        // wander, thinking about the gym or Pokémon
+        const x = Phaser.Math.Between(96, 230);
+        const y = Phaser.Math.Between(AISLE_Y + 12, 190);
+        await this.mitchyWalkTo(x, y);
+        await this.untilFree();
+        this.mitchyWalker.face('down');
+        this.mitchySpot = Math.random() < 0.5 ? 'gym' : 'pokemon';
+        await this.wait(Phaser.Math.Between(3000, 6000));
+      } else {
+        const dirs: Direction[] = ['down', 'left', 'right', 'up'];
+        this.mitchyWalker.face(dirs[Phaser.Math.Between(0, 3)]);
+        await this.wait(Phaser.Math.Between(2500, 5000));
+      }
+    }
+  }
+
+  private mitchyThink() {
+    const lines = MITCHY_MUSINGS[this.mitchySpot];
+    this.mitchyBubble.show(lines[Phaser.Math.Between(0, lines.length - 1)]);
+    this.mitchyBubble.place(this.game.canvas, this.scale.width, this.mitchy.x, this.mitchy.y - MITCHY_HEAD);
+  }
+
+  private scheduleMitchyThought() {
+    this.time.delayedCall(Phaser.Math.Between(11000, 22000), () => {
+      if (!this.mitchyBubble.visible && !this.bubble.visible && !this.inDialogue) this.mitchyThink();
+      this.scheduleMitchyThought();
     });
   }
 
@@ -465,6 +575,16 @@ export class BedroomScene extends Phaser.Scene {
     const px = this.player.x;
     const py = this.player.y;
 
+    // People first: Mitchy, and Hannah when she's up from her desk.
+    if (Phaser.Math.Distance.Between(px, py, this.mitchy.x, this.mitchy.y) < INTERACT_RANGE) {
+      this.greet('mitchy');
+      return;
+    }
+    if (!this.hostSeated && Phaser.Math.Distance.Between(px, py, this.host.x, this.host.y) < INTERACT_RANGE) {
+      this.greet('hannah');
+      return;
+    }
+
     // Dynamic cat interaction (follows the sprite)
     const catDist = Phaser.Math.Distance.Between(px, py, this.catSprite.x, this.catSprite.y);
     if (catDist < INTERACT_RANGE) {
@@ -506,11 +626,46 @@ export class BedroomScene extends Phaser.Scene {
     }
   }
 
-  private startDialogue(lines: string[]) {
+  /** Talk to Hannah or Mitchy: they stop, turn to the visitor and react line by line. */
+  private greet(who: 'hannah' | 'mitchy') {
+    const sprite = who === 'hannah' ? this.host : this.mitchy;
+    const walker = who === 'hannah' ? this.hostWalker : this.mitchyWalker;
+    const lines = this.met[who] ? GREETINGS[who].again : GREETINGS[who].first;
+    this.met[who] = true;
+    this.talkingTo = who;
+    (who === 'hannah' ? this.bubble : this.mitchyBubble).hide();
+
+    // turn toward the visitor
+    const dx = this.player.x - sprite.x, dy = this.player.y - sprite.y;
+    walker.face(Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down');
+
+    const react = (i: number) => {
+      sprite.setFlipX(false);
+      if (who === 'hannah') sprite.stop().setFrame(HF.happy_0);
+      else if (i === 0) sprite.play('mitchy-wave'); // shy wave hello
+      else if (i === lines.length - 1) sprite.stop().setFrame(MF.flustered_0); // ...awkward
+      else sprite.stop().setFrame(MF.happy_0);
+    };
+    this.startDialogue([...lines], SPEAKERS[who], react, () => {
+      this.talkingTo = null;
+      walker.play('idle');
+    });
+  }
+
+  private startDialogue(
+    lines: string[],
+    speaker: Speaker = SPEAKERS.hannah,
+    onLine: ((i: number) => void) | null = null,
+    onEnd: (() => void) | null = null,
+  ) {
     this.inDialogue = true;
     this.activeDialogue = lines;
     this.dialogueIndex = 0;
-    this.dialogue.show(lines[0]);
+    this.activeSpeaker = speaker;
+    this.onLine = onLine;
+    this.onDialogueEnd = onEnd;
+    onLine?.(0);
+    this.dialogue.show(lines[0], speaker);
   }
 
   private advanceDialogue() {
@@ -522,8 +677,12 @@ export class BedroomScene extends Phaser.Scene {
     if (this.dialogueIndex >= this.activeDialogue.length) {
       this.dialogue.hide();
       this.inDialogue = false;
+      const end = this.onDialogueEnd;
+      this.onLine = this.onDialogueEnd = null;
+      end?.();
     } else {
-      this.dialogue.show(this.activeDialogue[this.dialogueIndex]);
+      this.onLine?.(this.dialogueIndex);
+      this.dialogue.show(this.activeDialogue[this.dialogueIndex], this.activeSpeaker);
     }
   }
 }

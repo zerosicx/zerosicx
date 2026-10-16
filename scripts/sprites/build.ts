@@ -13,6 +13,7 @@ import { buildTree } from './tree.ts';
 import { buildGlow, buildLantern, buildMailbox, buildPetals, buildShadow } from './props.ts';
 import { hostFrames } from './host.ts';
 import { visitorFrames } from './visitor.ts';
+import { mitchyFrames } from './mitchy.ts';
 import { crop, packRaw, writePng } from './importSheet.ts';
 import { catFrames } from './cat.ts';
 import { computerFrames, doorFrames, furniture, roomTiles } from './interior.ts';
@@ -44,17 +45,21 @@ sheet('SakuraDoorGarden', 'door-garden.png', doorFrames('wood3'), 3); // seen fr
 for (const [name, canvas] of Object.entries(furniture())) single(`room-${name}.png`, canvas);
 // Imported characters keep their own colours, so they're packed outside the palette-locked Canvas.
 const host = hostFrames();
+const mitchy = mitchyFrames();
 for (const [name, file, frames] of [
   ['SakuraHost', 'host.png', host],
   ['SakuraVisitor', 'visitor.png', visitorFrames()],
   ['SakuraCat', 'cat.png', catFrames()],
+  ['SakuraMitchy', 'mitchy.png', mitchy],
 ] as const) {
   const { sheet: img, meta } = packRaw(frames, 8);
   writePng(path.join(OUT, file), img);
   sheets[name] = { sourceName: file, ...meta };
 }
-// Dialogue portrait: her front idle frame, cropped to her silhouette.
-writePng(path.join(OUT, 'host-portrait.png'), crop(host.find(f => f.name === 'idle_front_0')!.img));
+// Dialogue portraits: each speaker's front idle frame, cropped to their silhouette.
+for (const [file, frames] of [['host-portrait.png', host], ['mitchy-portrait.png', mitchy]] as const) {
+  writePng(path.join(OUT, file), crop(frames.find(f => f.name === 'idle_front_0')!.img));
+}
 single('tree.png', buildTree());
 single('glow.png', buildGlow());
 single('shadow.png', buildShadow());

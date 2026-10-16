@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { toFrameMap } from '../data/tilemaps';
-import { SakuraCat, SakuraHost, SakuraVisitor } from '../data/sakura-sprites';
+import { SakuraCat, SakuraHost, SakuraMitchy, SakuraVisitor } from '../data/sakura-sprites';
 
 export const ROOM_FURNITURE = [
   'bookshelf', 'dresser', 'desk', 'chair', 'bed', 'bed-headboard', 'bed-blanket', 'rug', 'window', 'clock',
@@ -38,6 +38,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('mailbox', `${sakura}/mailbox.png`, { frameWidth: 16, frameHeight: 24 });
     this.load.spritesheet('visitor', `${sakura}/visitor.png`, { frameWidth: SakuraVisitor.tileSize.w, frameHeight: SakuraVisitor.tileSize.h });
     this.load.spritesheet('host', `${sakura}/host.png`, { frameWidth: SakuraHost.tileSize.w, frameHeight: SakuraHost.tileSize.h });
+    this.load.spritesheet('mitchy', `${sakura}/mitchy.png`, { frameWidth: SakuraMitchy.tileSize.w, frameHeight: SakuraMitchy.tileSize.h });
     this.load.spritesheet('cat', `${sakura}/cat.png`, { frameWidth: SakuraCat.tileSize.w, frameHeight: SakuraCat.tileSize.h });
     this.load.spritesheet('sakura-room', `${sakura}/room.png`, { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('computer', `${sakura}/computer.png`, { frameWidth: 26, frameHeight: 24 });
@@ -87,6 +88,19 @@ export class BootScene extends Phaser.Scene {
     seq('host-walk-left',    'host', HF, 'walk_left',  WALK, 7);
     seq('host-walk-back',    'host', HF, 'walk_back',  WALK, 7);
     seq('host-type',         'host', HF, 'sit',        [0, 1, 0, 1, 2, 2], 5);
+
+    // ── Mitchy ──
+    const MF = toFrameMap(SakuraMitchy);
+    seq('mitchy-idle-forward', 'mitchy', MF, 'idle_front', IDLE, 3);
+    seq('mitchy-idle-side',    'mitchy', MF, 'idle_side',  [0, 1, 2, 3], 2);
+    seq('mitchy-idle-left',    'mitchy', MF, 'idle_left',  [0, 1, 2, 3], 2);
+    seq('mitchy-idle-back',    'mitchy', MF, 'idle_back',  [0, 1, 2, 3], 2);
+    seq('mitchy-walk-forward', 'mitchy', MF, 'walk_front', WALK, 7);
+    seq('mitchy-walk-side',    'mitchy', MF, 'walk_side',  WALK, 7);
+    seq('mitchy-walk-left',    'mitchy', MF, 'walk_left',  WALK, 7);
+    seq('mitchy-walk-back',    'mitchy', MF, 'walk_back',  WALK, 7);
+    seq('mitchy-play',         'mitchy', MF, 'play',       [0, 1, 0, 0, 1, 1], 4);
+    seq('mitchy-wave',         'mitchy', MF, 'wave',       [0, 1], 4);
 
     // ── Bengal cat ──
     const CF = toFrameMap(SakuraCat);

@@ -134,8 +134,21 @@ export function importSheet(file: string, opts: ImportOptions): RGBA[] {
   const rowH = src.h / opts.rows;
   const sprites = blobs
     .filter(b => b.size >= minSize)
-    .map(b => ({ ...b, row: Math.floor((b.y0 + b.y1) / 2 / rowH) }))
+    .map(b => ({ ...b, ids: new Set([b.id]), row: Math.floor((b.y0 + b.y1) / 2 / rowH) }))
     .sort((a, b) => a.row - b.row || a.x0 - b.x0);
+
+  // Small detached details (a sweat drop, motion marks by a wave) belong to the
+  // nearest sprite: attach any within ATTACH px of one, and grow its box.
+  const ATTACH = 40;
+  for (const d of blobs) {
+    if (d.size >= minSize || d.size < 30) continue;
+    const gap = (s: Blob) => Math.max(s.x0 - d.x1, d.x0 - s.x1, s.y0 - d.y1, d.y0 - s.y1, 0);
+    const owner = sprites.reduce((best, s) => (gap(s) < gap(best) ? s : best), sprites[0]);
+    if (!owner || gap(owner) > ATTACH) continue;
+    owner.ids.add(d.id);
+    owner.x0 = Math.min(owner.x0, d.x0); owner.x1 = Math.max(owner.x1, d.x1);
+    owner.y0 = Math.min(owner.y0, d.y0); owner.y1 = Math.max(owner.y1, d.y1);
+  }
 
   // shared palette from a sample of every sprite
   const samples: number[][] = [];
@@ -143,7 +156,7 @@ export function importSheet(file: string, opts: ImportOptions): RGBA[] {
     for (let y = s.y0; y <= s.y1; y += 3)
       for (let x = s.x0 + ((y / 3) % 3); x <= s.x1; x += 3) {
         const p = y * src.w + x;
-        if (label[p] === s.id) samples.push([src.data[p * 4], src.data[p * 4 + 1], src.data[p * 4 + 2]]);
+        if (s.ids.has(label[p])) samples.push([src.data[p * 4], src.data[p * 4 + 1], src.data[p * 4 + 2]]);
       }
   const palette = buildPalette(samples, opts.colours ?? 32, opts.pin);
   const lum = palette.map(p => 0.3 * p[0] + 0.59 * p[1] + 0.11 * p[2]);
@@ -161,7 +174,7 @@ export function importSheet(file: string, opts: ImportOptions): RGBA[] {
         for (let y = y0; y < y1; y++)
           for (let x = x0; x < x1; x++) {
             const p = y * src.w + x;
-            if (x > s.x1 || y > s.y1 || label[p] !== s.id) { votes[palette.length] += 1; continue; }
+            if (x > s.x1 || y > s.y1 || !s.ids.has(label[p])) { votes[palette.length] += 1; continue; }
             const c = nearest(palette, [src.data[p * 4], src.data[p * 4 + 1], src.data[p * 4 + 2]]);
             votes[c] += lum[c] < 70 ? 1.9 : 1; // keep outlines
           }

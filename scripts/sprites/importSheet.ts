@@ -192,7 +192,9 @@ export function tidy(img: RGBA, outline: [number, number, number], keepDarkEdges
   const opaque = (x: number, y: number) => { const i = get(x, y); return i >= 0 && img.data[i + 3] > 0; };
   const key = (i: number) => (img.data[i] << 16) | (img.data[i + 1] << 8) | img.data[i + 2];
 
-  // 1. halo: pale, greyish pixels touching transparency
+  // 1. halo: leftover backdrop on the silhouette — near-colourless light
+  //    pixels only. Pale skin (warm, ~25 apart across channels) must survive:
+  //    in profile views the face IS the edge.
   for (let pass = 0; pass < 2; pass++)
     for (let y = 0; y < h; y++)
       for (let x = 0; x < w; x++) {
@@ -200,7 +202,7 @@ export function tidy(img: RGBA, outline: [number, number, number], keepDarkEdges
         if (!img.data[i + 3]) continue;
         const [r, g, b] = [img.data[i], img.data[i + 1], img.data[i + 2]];
         const edge = !opaque(x + 1, y) || !opaque(x - 1, y) || !opaque(x, y + 1) || !opaque(x, y - 1);
-        if (edge && Math.min(r, g, b) > 185 && Math.max(r, g, b) - Math.min(r, g, b) < 40) img.data[i + 3] = 0;
+        if (edge && Math.min(r, g, b) > 200 && Math.max(r, g, b) - Math.min(r, g, b) < 14) img.data[i + 3] = 0;
       }
 
   // 2. despeckle: a pixel unlike all four neighbours, which agree, takes their colour

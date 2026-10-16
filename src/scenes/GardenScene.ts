@@ -3,11 +3,15 @@ import { PlayerController, PLAYER_FEET, type Rect } from '../systems/PlayerContr
 import { DialogueSystem } from '../systems/DialogueSystem';
 import { loadArticles, Article } from '../data/content-loader';
 import { ArticlePanel } from '../ui/ArticlePanel';
-import { Fences, GrassBiomePlants, Chests, toFrameMap } from '../data/tilemaps';
-import { SakuraDoorGarden, SakuraTiles } from '../data/sakura-sprites';
+import { Fences, GrassBiomePlants, toFrameMap } from '../data/tilemaps';
+import { SakuraDoorGarden, SakuraMailbox, SakuraTiles } from '../data/sakura-sprites';
 
 const DOOR_Y_THRESHOLD = 12; // walk up into the doorway past this → bedroom
-const PROXIMITY = 28;
+// Triggers measure from the visitor's feet to the base of the object, so she
+// has to walk right up to it.
+const FLOWER_RANGE = 12;
+const MAILBOX_OPEN_RANGE = 14;
+const MAILBOX_PEEK_RANGE = 22;
 const GARDEN_ENTRY_Y = 28;
 
 // ─── Tile grid constants ─────────────────────────────────────────────────────
@@ -19,7 +23,8 @@ const ST = toFrameMap(SakuraTiles);
 const D = toFrameMap(SakuraDoorGarden);
 const FE = toFrameMap(Fences);
 const GB = toFrameMap(GrassBiomePlants);
-const CH = toFrameMap(Chests);
+const MB = toFrameMap(SakuraMailbox);
+const MAILBOX = { x: 72, y: 48 }; // base of the post
 
 const GRASS_VARIANTS = [ST.grass_0, ST.grass_0, ST.grass_0, ST.grass_0, ST.grass_1, ST.grass_2, ST.grass_3];
 const PETAL_VARIANTS = [ST.grass_petals_0, ST.grass_petals_1, ST.grass_petals_2];
@@ -33,7 +38,7 @@ const isPath = (col: number, row: number) => PATH.has(`${col},${row}`);
 const TREES: [number, number][] = [[56, 200], [264, 200]];
 const LANTERNS: [number, number][] = [[112, 60], [208, 60]];
 
-// Fence lines (with the door gap), trunks, lantern plinths and the chest.
+// Fence lines (with the door gap), trunks, lantern plinths and the mailbox post.
 const COLLIDERS: Rect[] = [
   { x: 16,  y: 20,  w: 128, h: 10 }, // top fence, left of door
   { x: 176, y: 20,  w: 128, h: 10 }, // top fence, right of door
@@ -42,7 +47,7 @@ const COLLIDERS: Rect[] = [
   { x: 16,  y: 212, w: 288, h: 12 }, // bottom fence
   ...TREES.map(([x, y]) => ({ x: x - 6, y: y - 6, w: 12, h: 6 })),
   ...LANTERNS.map(([x, y]) => ({ x: x - 6, y: y - 6, w: 12, h: 6 })),
-  { x: 66, y: 38, w: 12, h: 8 }, // chest
+  { x: MAILBOX.x - 5, y: MAILBOX.y - 5, w: 10, h: 5 }, // mailbox post
 ];
 
 // Two-tile sliding door in the top fence, centred on the path
@@ -79,10 +84,10 @@ export class GardenScene extends Phaser.Scene {
   private articlePanel!: ArticlePanel;
   private articles: Article[] = [];
   private flowerObjects: { sprite: Phaser.GameObjects.Image; article: Article }[] = [];
-  private chestSprite!: Phaser.GameObjects.Image;
+  private mailbox!: Phaser.GameObjects.Image;
   private canopies: Phaser.GameObjects.Image[] = [];
   private lanterns: Phaser.GameObjects.Sprite[] = [];
-  private chestOpen = false;
+  private mailboxOpen = false;
   private lastNearArticle: Article | null = null;
 
   constructor() {
@@ -142,26 +147,18 @@ export class GardenScene extends Phaser.Scene {
       this.scene.start('BedroomScene', { from: 'garden' });
     }
 
-    // Chest proximity → show recent articles
-    const chestCX = this.chestSprite.x + 8;
-    const chestCY = this.chestSprite.y + 8;
-    const chestDist = Phaser.Math.Distance.Between(this.player.x, this.player.y, chestCX, chestCY);
-    if (chestDist < 28) {
-      this.chestSprite.setFrame(CH.small_chest_open);
-      if (!this.chestOpen) {
-        this.chestOpen = true;
+    // Mailbox: peeks open as she walks up, opens (recent articles) when she's at it
+    const mailDist = this.feetDistance(MAILBOX.x, MAILBOX.y);
+    if (mailDist < MAILBOX_OPEN_RANGE) {
+      this.mailbox.setFrame(MB.mailbox_open);
+      if (!this.mailboxOpen) {
+        this.mailboxOpen = true;
         this.articlePanel.showRecent(this.articles.slice(0, 5));
       }
-    } else if (chestDist < 40) {
-      this.chestSprite.setFrame(CH.small_chest_half_open);
-      if (this.chestOpen) {
-        this.chestOpen = false;
-        this.articlePanel.hide();
-      }
     } else {
-      this.chestSprite.setFrame(CH.small_chest);
-      if (this.chestOpen) {
-        this.chestOpen = false;
+      this.mailbox.setFrame(mailDist < MAILBOX_PEEK_RANGE ? MB.mailbox_half_open : MB.mailbox_closed);
+      if (this.mailboxOpen) {
+        this.mailboxOpen = false;
         this.articlePanel.hide();
       }
     }
@@ -227,11 +224,12 @@ export class GardenScene extends Phaser.Scene {
       this.canopies.push(this.add.image(x, y, 'sakura-tree').setOrigin(0.5, 0.95).setDepth(y));
     }
 
-    // ── Recent articles chest ──────────────────────────────────────────
-    this.chestSprite = this.add
-      .image(4 * TILE, 2 * TILE, 'chest', CH.small_chest)
-      .setOrigin(0, 0)
-      .setDepth(3 * TILE);
+    // ── Mailbox: recent articles ───────────────────────────────────────
+    this.add.image(MAILBOX.x, MAILBOX.y + 2, 'sakura-shadow').setOrigin(0.5, 1);
+    this.mailbox = this.add
+      .image(MAILBOX.x, MAILBOX.y + 1, 'mailbox', MB.mailbox_closed)
+      .setOrigin(0.5, 1)
+      .setDepth(MAILBOX.y);
 
   }
 
@@ -304,16 +302,19 @@ export class GardenScene extends Phaser.Scene {
     });
   }
 
-  private updateProximityPanel() {
-    const px = this.player.x;
-    const py = this.player.y;
+  /** Distance from the visitor's feet to a point on the ground. */
+  private feetDistance(x: number, y: number) {
+    return Phaser.Math.Distance.Between(this.player.x, this.player.y + PLAYER_FEET, x, y);
+  }
 
+  private updateProximityPanel() {
     let nearest: { sprite: Phaser.GameObjects.Image; article: Article } | null = null;
     let nearestDist = Infinity;
 
     for (const f of this.flowerObjects) {
-      const dist = Phaser.Math.Distance.Between(px, py, f.sprite.x, f.sprite.y);
-      if (dist < PROXIMITY && dist < nearestDist) {
+      // flowers are centred 16 px sprites; their stems meet the ground 6 px down
+      const dist = this.feetDistance(f.sprite.x, f.sprite.y + 6);
+      if (dist < FLOWER_RANGE && dist < nearestDist) {
         nearest = f;
         nearestDist = dist;
       }

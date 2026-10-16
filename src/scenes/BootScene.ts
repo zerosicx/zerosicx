@@ -25,10 +25,6 @@ export class BootScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16,
     });
-    this.load.spritesheet('chest', 'assets/sprites/Objects/Chest.png', {
-      frameWidth: 16,
-      frameHeight: 16,
-    });
 
     // ── Generated sakura set (npm run sprites) ──
     const sakura = 'assets/sprites/sakura';
@@ -38,6 +34,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('sakura-tree', `${sakura}/tree.png`);
     this.load.image('sakura-glow', `${sakura}/glow.png`);
     this.load.image('sakura-shadow', `${sakura}/shadow.png`);
+    this.load.spritesheet('mailbox', `${sakura}/mailbox.png`, { frameWidth: 16, frameHeight: 24 });
     this.load.spritesheet('visitor', `${sakura}/visitor.png`, { frameWidth: SakuraVisitor.tileSize.w, frameHeight: SakuraVisitor.tileSize.h });
     this.load.spritesheet('host', `${sakura}/host.png`, { frameWidth: SakuraHost.tileSize.w, frameHeight: SakuraHost.tileSize.h });
     this.load.spritesheet('cat', `${sakura}/cat.png`, { frameWidth: 24, frameHeight: 20 });

@@ -265,6 +265,41 @@ export const SakuraPetals = {
   }
 } as const;
 
+export const SakuraMailbox = {
+  "sourceName": "mailbox.png",
+  "columns": 3,
+  "tileSize": {
+    "w": 16,
+    "h": 24
+  },
+  "tiles": {
+    "mailbox_closed": {
+      "col": 0,
+      "row": 0,
+      "x": 0,
+      "y": 0,
+      "w": 16,
+      "h": 24
+    },
+    "mailbox_half_open": {
+      "col": 1,
+      "row": 0,
+      "x": 16,
+      "y": 0,
+      "w": 16,
+      "h": 24
+    },
+    "mailbox_open": {
+      "col": 2,
+      "row": 0,
+      "x": 32,
+      "y": 0,
+      "w": 16,
+      "h": 24
+    }
+  }
+} as const;
+
 export const SakuraCat = {
   "sourceName": "cat.png",
   "columns": 8,

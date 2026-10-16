@@ -10,7 +10,7 @@ import path from 'node:path';
 import { packSheet, type Canvas } from './lib.ts';
 import { buildTiles } from './tiles.ts';
 import { buildTree } from './tree.ts';
-import { buildGlow, buildLantern, buildPetals, buildShadow } from './props.ts';
+import { buildGlow, buildLantern, buildMailbox, buildPetals, buildShadow } from './props.ts';
 import { hostFrames } from './host.ts';
 import { visitorFrames } from './visitor.ts';
 import { packRaw, writePng } from './importSheet.ts';
@@ -36,6 +36,7 @@ function single(file: string, canvas: Canvas) {
 sheet('SakuraTiles', 'tiles.png', buildTiles(), 8);
 sheet('SakuraLantern', 'lantern.png', buildLantern(), 2);
 sheet('SakuraPetals', 'petals.png', buildPetals(), 4);
+sheet('SakuraMailbox', 'mailbox.png', buildMailbox(), 3);
 sheet('SakuraCat', 'cat.png', catFrames(), 8);
 sheet('SakuraRoom', 'room.png', roomTiles(), 8);
 sheet('SakuraComputer', 'computer.png', computerFrames(), 5);

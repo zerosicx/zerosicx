@@ -2,12 +2,13 @@ import { Article } from '../data/content-loader';
 
 /**
  * ArticlePanel
- * HTML overlay panel (right-side) for showing article previews and full reads.
- * Pixel-art styled: 3-colour palette (parchment, dark brown, accent pink),
- * hard borders, offset shadow.
+ * HTML overlay (right side) for article previews and full reads, styled as a
+ * hanging paper scroll: parchment between two wooden rollers. The paper
+ * scrolls; the rollers stay put.
  */
 export class ArticlePanel {
   private panel: HTMLElement | null = null;
+  private paper: HTMLElement | null = null;
 
   showPreview(article: Article) {
     this.render(`
@@ -127,32 +128,32 @@ export class ArticlePanel {
   hide() {
     this.panel?.remove();
     this.panel = null;
+    this.paper = null;
   }
 
   // ── Private ────────────────────────────────────────────────────────────────
 
   private render(html: string) {
     if (!this.panel) this.createPanel();
-    if (this.panel) this.panel.innerHTML = html;
+    if (this.paper) {
+      this.paper.innerHTML = html;
+      this.paper.scrollTop = 0;
+    }
   }
 
   private createPanel() {
     const app = document.getElementById('app');
     if (!app) return;
 
-    this.panel = document.createElement('div');
+    this.panel = document.createElement('aside');
     this.panel.id = 'article-panel';
-    this.panel.className = [
-      'fixed', 'top-4', 'right-4', 'bottom-4',
-      'w-[480px]',
-      'bg-[#fef3e2]',
-      'border-4', 'border-[#a8607e]',
-      'p-5',
-      'z-40',
-      'overflow-y-auto',
-      'shadow-[4px_4px_0_#8a4a68]',
-    ].join(' ');
-
+    this.panel.className = 'scroll-panel';
+    this.panel.innerHTML = `
+      <div class="scroll-roller scroll-roller--top" aria-hidden="true"></div>
+      <div class="scroll-paper"></div>
+      <div class="scroll-roller scroll-roller--bottom" aria-hidden="true"><span class="scroll-tassel"></span></div>
+    `;
+    this.paper = this.panel.querySelector('.scroll-paper');
     app.appendChild(this.panel);
   }
 }

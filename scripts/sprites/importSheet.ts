@@ -82,19 +82,25 @@ function findBlobs(src: RGBA) {
   return { label, blobs };
 }
 
-/** k-means palette over sampled sprite pixels. */
-function buildPalette(samples: number[][], k: number, iterations = 12) {
+/**
+ * k-means palette over sampled sprite pixels. `pinned` colours are always in
+ * the palette and never move — for small accents (a hair clip) that are too
+ * rare to win a cluster of their own.
+ */
+function buildPalette(samples: number[][], k: number, pinned: number[][] = [], iterations = 12) {
   const sorted = [...samples].sort((a, b) => a[0] + a[1] + a[2] - (b[0] + b[1] + b[2]));
   let centres = Array.from({ length: k }, (_, i) => [...sorted[Math.floor(((i + 0.5) / k) * sorted.length)]]);
   for (let it = 0; it < iterations; it++) {
+    const all = [...centres, ...pinned];
     const sums = centres.map(() => [0, 0, 0, 0]);
     for (const s of samples) {
-      const c = nearest(centres, s);
+      const c = nearest(all, s);
+      if (c >= centres.length) continue; // claimed by a pinned colour
       sums[c][0] += s[0]; sums[c][1] += s[1]; sums[c][2] += s[2]; sums[c][3]++;
     }
     centres = centres.map((c, i) => (sums[i][3] ? [sums[i][0] / sums[i][3], sums[i][1] / sums[i][3], sums[i][2] / sums[i][3]] : c));
   }
-  return centres.map(c => c.map(Math.round));
+  return [...centres.map(c => c.map(Math.round)), ...pinned];
 }
 
 function nearest(palette: number[][], c: number[]) {
@@ -116,6 +122,8 @@ export type ImportOptions = {
   colours?: number;
   /** Ignore blobs smaller than this many source pixels (specks, text). */
   minSize?: number;
+  /** Colours that must survive quantisation, as [r, g, b]. */
+  pin?: number[][];
 };
 
 /** Every sprite on the sheet, downsampled, in reading order (row by row, left to right). */
@@ -137,7 +145,7 @@ export function importSheet(file: string, opts: ImportOptions): RGBA[] {
         const p = y * src.w + x;
         if (label[p] === s.id) samples.push([src.data[p * 4], src.data[p * 4 + 1], src.data[p * 4 + 2]]);
       }
-  const palette = buildPalette(samples, opts.colours ?? 32);
+  const palette = buildPalette(samples, opts.colours ?? 32, opts.pin);
   const lum = palette.map(p => 0.3 * p[0] + 0.59 * p[1] + 0.11 * p[2]);
 
   return sprites.map(s => {

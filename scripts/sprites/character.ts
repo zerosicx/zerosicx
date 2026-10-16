@@ -75,9 +75,11 @@ export function importCharacter(
     frames: Record<string, FrameSpec>;
     factor?: number;
     colours?: number;
+    /** Accent colours that must survive quantisation, as [r, g, b]. */
+    pin?: number[][];
   },
 ) {
-  const sprites = importSheet(file, { rows: opts.rows, factor: opts.factor ?? 5.8, colours: opts.colours ?? 24 })
+  const sprites = importSheet(file, { rows: opts.rows, factor: opts.factor ?? 5.8, colours: opts.colours ?? 24, pin: opts.pin })
     .map(s => tidy(pad(s), OUTLINE));
   const lying = new Set(opts.lying);
   const waistUp = new Set(opts.waistUp?.frames ?? []);

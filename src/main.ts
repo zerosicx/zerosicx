@@ -25,4 +25,7 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, WelcomeScene, BedroomScene, GardenScene],
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// Dev-only handle for debugging from the console, e.g. game.scene.start('GardenScene')
+if (import.meta.env.DEV) (window as unknown as { game: Phaser.Game }).game = game;

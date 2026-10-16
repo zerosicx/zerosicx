@@ -3,7 +3,8 @@ import { PlayerController } from '../systems/PlayerController';
 import { DialogueSystem } from '../systems/DialogueSystem';
 import { loadArticles, Article } from '../data/content-loader';
 import { ArticlePanel } from '../ui/ArticlePanel';
-import { Grass, Doors, Fences, GrassBiomePlants, Chests, toFrameMap } from '../data/tilemaps';
+import { Doors, Fences, GrassBiomePlants, Chests, toFrameMap } from '../data/tilemaps';
+import { SakuraTiles } from '../data/sakura-sprites';
 
 const DOOR_Y_THRESHOLD = 22;
 const PROXIMITY = 28;
@@ -14,18 +15,23 @@ const TILE = 16;
 const COLS = 20; // 320 / 16
 const ROWS = 15; // 240 / 16
 
-const G = toFrameMap(Grass);
+const ST = toFrameMap(SakuraTiles);
 const D = toFrameMap(Doors);
 const FE = toFrameMap(Fences);
 const GB = toFrameMap(GrassBiomePlants);
 const CH = toFrameMap(Chests);
 
-const GRASS_TEXTURES = [
-  G.grass_texture_0_0, G.grass_texture_0_1, G.grass_texture_0_2,
-  G.grass_texture_0_3, G.grass_texture_0_4, G.grass_texture_0_5,
-  G.grass_texture_1_0, G.grass_texture_1_1, G.grass_texture_1_2,
-  G.grass_texture_1_3, G.grass_texture_1_4, G.grass_texture_1_5,
-];
+const GRASS_VARIANTS = [ST.grass_0, ST.grass_0, ST.grass_0, ST.grass_0, ST.grass_1, ST.grass_2, ST.grass_3];
+const PETAL_VARIANTS = [ST.grass_petals_0, ST.grass_petals_1, ST.grass_petals_2];
+
+// Stone path from the door down through the garden.
+const PATH = new Set<string>(['10,1']);
+for (let row = 2; row <= 12; row++) for (let col = 9; col <= 11; col++) PATH.add(`${col},${row}`);
+const isPath = (col: number, row: number) => PATH.has(`${col},${row}`);
+
+// Sakura trees (base of trunk) and stone lanterns (base of plinth), in px.
+const TREES: [number, number][] = [[56, 200], [264, 200]];
+const LANTERNS: [number, number][] = [[128, 60], [208, 60]];
 
 const DOOR_COL = 10;
 const DOOR_CENTER_X = DOOR_COL * TILE + TILE / 2;
@@ -61,6 +67,8 @@ export class GardenScene extends Phaser.Scene {
   private articles: Article[] = [];
   private flowerObjects: { sprite: Phaser.GameObjects.Image; article: Article }[] = [];
   private chestSprite!: Phaser.GameObjects.Image;
+  private canopies: Phaser.GameObjects.Image[] = [];
+  private lanterns: Phaser.GameObjects.Sprite[] = [];
   private chestOpen = false;
   private lastNearArticle: Article | null = null;
 
@@ -76,8 +84,11 @@ export class GardenScene extends Phaser.Scene {
     this.articles = [];
     this.flowerObjects = [];
     this.lastNearArticle = null;
+    this.canopies = [];
+    this.lanterns = [];
 
     this.drawGarden();
+    this.addPetals();
 
     const spawnY = data?.from === 'bedroom' ? GARDEN_ENTRY_Y : GARDEN_ENTRY_Y;
     this.player = this.add.sprite(160, spawnY, 'visitor', 0).setDepth(10);
@@ -98,6 +109,7 @@ export class GardenScene extends Phaser.Scene {
   update() {
     if (!this.controller || !this.player) return;
     this.controller.update();
+    this.updateSakuraDepth();
 
     // Animate door
     const doorDist = Phaser.Math.Distance.Between(
@@ -146,32 +158,20 @@ export class GardenScene extends Phaser.Scene {
   // ── Private helpers ─────────────────────────────────────────────────────────
 
   private drawGarden() {
-    // ── Grass ground ──────────────────────────────────────────────────────
-    this.placeGrass(0, 0, G.grass_top_left);
-    for (let col = 1; col < COLS - 1; col++) {
-      this.placeGrass(col, 0, G.grass_top);
-    }
-    this.placeGrass(COLS - 1, 0, G.grass_top_right);
-
-    for (let row = 1; row < ROWS - 1; row++) {
-      this.placeGrass(0, row, G.grass_left);
-      for (let col = 1; col < COLS - 1; col++) {
-        const hash = (col * 7 + row * 13) % 9;
-        if (hash === 0) {
-          const texIdx = (col * 3 + row * 5) % GRASS_TEXTURES.length;
-          this.placeGrass(col, row, GRASS_TEXTURES[texIdx]);
-        } else {
-          this.placeGrass(col, row, G.grass_middle);
-        }
+    // ── Ground: grass, with petal-strewn variants under the trees ─────────
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const h = Math.abs(Math.imul(col * 73856093 ^ row * 19349663, 0x5bd1e995) >> 7);
+        const cx = col * TILE + TILE / 2, cy = row * TILE + TILE / 2;
+        const underTree = TREES.some(([tx, ty]) => Math.hypot(cx - tx, (cy - ty) * 1.5) < 48);
+        const frame = isPath(col, row)
+          ? this.pathFrame(col, row)
+          : underTree && h % 3 !== 0
+            ? PETAL_VARIANTS[h % PETAL_VARIANTS.length]
+            : GRASS_VARIANTS[h % GRASS_VARIANTS.length];
+        this.add.image(col * TILE, row * TILE, 'sakura-tiles', frame).setOrigin(0, 0);
       }
-      this.placeGrass(COLS - 1, row, G.grass_right);
     }
-
-    this.placeGrass(0, ROWS - 1, G.grass_bottom_left);
-    for (let col = 1; col < COLS - 1; col++) {
-      this.placeGrass(col, ROWS - 1, G.grass_bottom);
-    }
-    this.placeGrass(COLS - 1, ROWS - 1, G.grass_bottom_right);
 
     // ── Door (placed after grass so it's not covered) ─────────────────
     this.doorSprite = this.add
@@ -195,19 +195,22 @@ export class GardenScene extends Phaser.Scene {
     for (let col = 2; col <= COLS - 3; col++) this.placeFence(col, 13, FE.fence_middle_2);
     this.placeFence(COLS - 2, 13, FE.fence_bottom_right_2);
 
-    // ── Grass-biome decorations ───────────────────────────────────────────
-    const decoSpots: [number, number, number][] = [
-      [3,  3,  GB.red_mushroom],
-      [15, 3,  GB.purple_mushroom],
-      [4,  11, GB.sproutlings],
-      [16, 10, GB.small_rock_loose],
-      [2,  8,  GB.sprout],
-      [17, 6,  GB.rock],
-      [14, 11, GB.small_rock_loose],
-      [3,  6,  GB.sprout],
-    ];
-    for (const [col, row, frame] of decoSpots) {
-      this.add.image(col * TILE, row * TILE, 'grass-biome', frame).setOrigin(0, 0);
+    // ── Stone lanterns ────────────────────────────────────────────────────
+    for (const [x, y] of LANTERNS) {
+      this.add.image(x, y + 1, 'sakura-shadow').setOrigin(0.5, 1);
+      const glow = this.add.image(x, y - 19, 'sakura-glow')
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setAlpha(0.1)
+        .setDepth(31);
+      this.tweens.add({
+        targets: glow, alpha: 0.16, duration: 900 + x, yoyo: true, repeat: -1, ease: 'Sine.inOut',
+      });
+      this.lanterns.push(this.add.sprite(x, y, 'sakura-lantern', 0).setOrigin(0.5, 1).play('lantern-flicker'));
+    }
+
+    // ── Sakura trees (drawn above fences; fade when the player walks under) ─
+    for (const [x, y] of TREES) {
+      this.canopies.push(this.add.image(x, y, 'sakura-tree').setOrigin(0.5, 0.95).setDepth(25));
     }
 
     // ── Recent articles chest ──────────────────────────────────────────
@@ -217,8 +220,51 @@ export class GardenScene extends Phaser.Scene {
 
   }
 
-  private placeGrass(col: number, row: number, frame: number) {
-    this.add.image(col * TILE, row * TILE, 'grass', frame).setOrigin(0, 0);
+  /** Autotile: pick the path frame whose open edges match the neighbours. */
+  private pathFrame(col: number, row: number) {
+    const dirs = [
+      ['n', isPath(col, row - 1)], ['e', isPath(col + 1, row)],
+      ['s', isPath(col, row + 1)], ['w', isPath(col - 1, row)],
+    ] as const;
+    const suffix = dirs.filter(([, on]) => on).map(([d]) => d).join('') || 'single';
+    return ST[`path_${suffix}` as keyof typeof ST];
+  }
+
+  /** Falling petals: a light drift across the whole garden, heavier under trees. */
+  private addPetals() {
+    const base = {
+      anim: 'petal-tumble',
+      lifespan: 18000,
+      speedX: { min: -14, max: -4 },
+      speedY: { min: 8, max: 16 },
+      accelerationX: { min: -3, max: 3 },
+      alpha: { start: 1, end: 0, ease: 'Expo.easeIn' },
+    };
+    this.add.particles(0, -6, 'sakura-petals', {
+      ...base,
+      x: { min: 0, max: 380 },
+      frequency: 600,
+    }).setDepth(30);
+
+    for (const [x, y] of TREES) {
+      this.add.particles(x, y - 60, 'sakura-petals', {
+        ...base,
+        lifespan: 4500,
+        x: { min: -26, max: 26 },
+        y: { min: -10, max: 20 },
+        frequency: 700,
+      }).setDepth(30);
+    }
+  }
+
+  /** Lanterns sort against the player; canopies go see-through when walked under. */
+  private updateSakuraDepth() {
+    const { x, y } = this.player;
+    for (const l of this.lanterns) l.setDepth(y < l.y ? 15 : 5);
+    for (const c of this.canopies) {
+      const under = Math.abs(x - c.x) < 30 && y < c.y - 6 && y > c.y - 72;
+      c.setAlpha(under ? 0.65 : 1);
+    }
   }
 
   private placeFence(col: number, row: number, frame: number) {

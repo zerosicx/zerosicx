@@ -49,6 +49,15 @@ export class BootScene extends Phaser.Scene {
       frameHeight: 16,
     });
 
+    // ── Generated sakura set (npm run sprites) ──
+    const sakura = 'assets/sprites/sakura';
+    this.load.spritesheet('sakura-tiles', `${sakura}/tiles.png`, { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('sakura-lantern', `${sakura}/lantern.png`, { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('sakura-petals', `${sakura}/petals.png`, { frameWidth: 5, frameHeight: 5 });
+    this.load.image('sakura-tree', `${sakura}/tree.png`);
+    this.load.image('sakura-glow', `${sakura}/glow.png`);
+    this.load.image('sakura-shadow', `${sakura}/shadow.png`);
+
     const bar = this.add.rectangle(160, 128, 0, 8, 0xf9a8d4);
     this.load.on('progress', (value: number) => {
       bar.width = 200 * value;
@@ -93,6 +102,20 @@ export class BootScene extends Phaser.Scene {
     catAnim('cat-walk-forward', [CF.cat_walk_left_foot, CF.cat_walk_right_foot], 6);
     catAnim('cat-walk-back',    [CF.cat_walk_back_left_foot, CF.cat_walk_back_right_foot], 6);
     catAnim('cat-walk-side',    [CF.cat_walk_right_left_foot, CF.cat_walk_right_right_foot], 6);
+
+    // ── Sakura animations ──
+    this.anims.create({
+      key: 'lantern-flicker',
+      frames: this.anims.generateFrameNumbers('sakura-lantern', { start: 0, end: 1 }),
+      frameRate: 3,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'petal-tumble',
+      frames: this.anims.generateFrameNumbers('sakura-petals', { start: 0, end: 3 }),
+      frameRate: 6,
+      repeat: -1,
+    });
 
     const hasVisited = localStorage.getItem('zerosicx_visited');
     if (hasVisited) {

@@ -30,8 +30,9 @@ export class WelcomeScene extends Phaser.Scene {
   create() {
     this.add.rectangle(160, 120, 320, 240, 0x1a0a1a);
 
-    // HTML title — crisp at any zoom, uses Pixelify Sans
-    const app = document.getElementById('app');
+    // HTML title — crisp at any zoom, uses Pixelify Sans. Inside #screen so it
+    // sits in the game screen (above the dialogue) on every device.
+    const app = document.getElementById('screen') ?? document.getElementById('app');
     if (app) {
       this.titleEl = document.createElement('h1');
       this.titleEl.id = 'welcome-title';

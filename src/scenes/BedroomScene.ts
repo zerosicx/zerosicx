@@ -5,7 +5,8 @@ import { Walker, type Direction } from '../systems/Walker';
 import { ComputerPanel } from '../ui/ComputerPanel';
 import { ThoughtBubble } from '../ui/ThoughtBubble';
 import { loadProjects, Project } from '../data/content-loader';
-import { GREETINGS, MITCHY_MUSINGS, MUSINGS, type MitchySpot, type MusingSpot } from '../data/musings';
+import { FAREWELLS, GREETINGS, MITCHY_MUSINGS, MUSINGS, type MitchySpot, type MusingSpot } from '../data/musings';
+import { onPadButton } from '../systems/Gamepad';
 import { toFrameMap } from '../data/tilemaps';
 import { SakuraDoor, SakuraHost, SakuraMitchy, SakuraRoom, SakuraVisitor } from '../data/sakura-sprites';
 
@@ -148,6 +149,7 @@ export class BedroomScene extends Phaser.Scene {
   private activeSpeaker: Speaker = SPEAKERS.hannah;
   private onLine: ((i: number) => void) | null = null;
   private onDialogueEnd: (() => void) | null = null;
+  private sayingBye = false;
 
   constructor() {
     super({ key: 'BedroomScene' });
@@ -155,6 +157,7 @@ export class BedroomScene extends Phaser.Scene {
 
   create(data?: { from?: 'garden' }) {
     this.inDialogue = false;
+    this.sayingBye = false;
     this.talkingTo = null;
     this.inBed = false;
     this.bedArmed = true;
@@ -185,9 +188,10 @@ export class BedroomScene extends Phaser.Scene {
       this.mitchyBubble.destroy();
     });
 
-    // Input
-    this.input.keyboard?.on('keydown-SPACE', () => this.onAction());
-    this.input.keyboard?.on('keydown-ENTER', () => this.onAction());
+    // Input: A (Space/Enter/Z, or a tap on the screen) interacts, B (Esc/X) cancels
+    const offA = onPadButton('A', () => this.onAction());
+    const offB = onPadButton('B', () => this.onCancel());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offA(); offB(); });
     this.input.on('pointerdown', () => this.onAction());
 
     this.runHost();
@@ -564,11 +568,47 @@ export class BedroomScene extends Phaser.Scene {
   // ── Interaction ─────────────────────────────────────────────────────────────
 
   private onAction() {
+    if (this.computerPanel.isOpen) return;
     if (this.inDialogue) {
       this.advanceDialogue();
       return;
     }
     this.tryInteract();
+  }
+
+  /**
+   * B: back out. Closes the computer, or ends a chat — Hannah or Mitchy see
+   * the visitor off with a goodbye line first.
+   */
+  private onCancel() {
+    if (this.computerPanel.isOpen) {
+      this.computerPanel.hide();
+      return;
+    }
+    if (!this.inDialogue) return;
+    const who = this.talkingTo;
+    if (who && !this.sayingBye) {
+      this.sayingBye = true;
+      const lines = FAREWELLS[who];
+      const line = lines[Phaser.Math.Between(0, lines.length - 1)];
+      (who === 'hannah' ? this.host : this.mitchy).stop().setFlipX(false)
+        .setFrame(who === 'hannah' ? HF.happy_0 : MF.happy_0);
+      this.activeDialogue = [line];
+      this.dialogueIndex = 0;
+      this.onLine = null; // keep the goodbye smile
+      this.dialogue.show(line, this.activeSpeaker);
+      return;
+    }
+    this.closeDialogue();
+  }
+
+  private closeDialogue() {
+    this.dialogue.hide();
+    this.inDialogue = false;
+    this.sayingBye = false;
+    const end = this.onDialogueEnd;
+    this.onLine = this.onDialogueEnd = null;
+    end?.();
   }
 
   private tryInteract() {
@@ -675,11 +715,7 @@ export class BedroomScene extends Phaser.Scene {
     }
     this.dialogueIndex++;
     if (this.dialogueIndex >= this.activeDialogue.length) {
-      this.dialogue.hide();
-      this.inDialogue = false;
-      const end = this.onDialogueEnd;
-      this.onLine = this.onDialogueEnd = null;
-      end?.();
+      this.closeDialogue();
     } else {
       this.onLine?.(this.dialogueIndex);
       this.dialogue.show(this.activeDialogue[this.dialogueIndex], this.activeSpeaker);

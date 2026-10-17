@@ -11,7 +11,8 @@ export class ThoughtBubble {
     this.el = document.createElement('div');
     this.el.className = 'thought-bubble';
     this.el.setAttribute('aria-live', 'polite');
-    document.getElementById('app')?.appendChild(this.el);
+    // inside #screen, so it's positioned against the (scaled) canvas
+    (document.getElementById('screen') ?? document.getElementById('app'))?.appendChild(this.el);
   }
 
   get visible() {
@@ -35,6 +36,9 @@ export class ThoughtBubble {
     this.el.classList.toggle('is-flipped', x > gameWidth * 0.6); // keep it inside the room
     this.el.style.left = `${canvas.offsetLeft + x * scale}px`;
     this.el.style.top = `${canvas.offsetTop + y * scale}px`;
+    // Near the top wall there's no room above their head (on a phone the
+    // bubble would poke out of the screen), so it hangs below instead.
+    this.el.classList.toggle('is-below', y * scale < this.el.offsetHeight + 26);
   }
 
   destroy() {

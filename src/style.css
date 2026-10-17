@@ -168,14 +168,11 @@ canvas {
   overflow-y: auto;
   font-size: 1.05rem;
   color: #4a3728;
-  /* parchment: warm base, faint fibres, darker aged edges */
-  background:
-    repeating-linear-gradient(0deg, rgba(168, 122, 98, 0.05) 0 1px, transparent 1px 5px),
-    radial-gradient(ellipse at center, #fffaf0 55%, #f6e3c4 100%),
-    #fbf1dc;
-  border-left: 3px solid #e1c7a4;
-  border-right: 3px solid #e1c7a4;
-  box-shadow: inset 0 10px 10px -8px rgba(79, 51, 48, 0.35), inset 0 -10px 10px -8px rgba(79, 51, 48, 0.35);
+  /* parchment: flat warm paper with hard-edged aged bands top and bottom */
+  background: #fbf1dc;
+  border-left: 4px solid #e1c7a4;
+  border-right: 4px solid #e1c7a4;
+  box-shadow: inset 0 4px 0 #f1dcbc, inset 0 -4px 0 #f1dcbc;
   scrollbar-width: thin;
   scrollbar-color: #b2527a #f6e3c4;
 }
@@ -192,9 +189,9 @@ canvas {
 .scroll-roller {
   position: relative;
   height: 20px;
-  border-radius: 10px;
-  border: 3px solid #2a1b2d;
-  background: linear-gradient(180deg, #c69469 0%, #9b6a4c 45%, #74493b 100%);
+  border: 4px solid #2a1b2d;
+  background: #9b6a4c;
+  box-shadow: inset 0 4px 0 #c69469, inset 0 -4px 0 #74493b; /* flat lit top, shaded bottom */
 }
 
 /* sakura-pink end caps on each roller */
@@ -205,9 +202,9 @@ canvas {
   top: -6px;
   width: 16px;
   height: 26px;
-  border: 3px solid #2a1b2d;
-  border-radius: 6px;
-  background: linear-gradient(180deg, #f3a9c1, #b2527a);
+  border: 4px solid #2a1b2d;
+  background: #de7c9f;
+  box-shadow: inset 0 4px 0 #f3a9c1, inset 0 -4px 0 #b2527a;
 }
 .scroll-roller::before { left: -10px; }
 .scroll-roller::after { right: -10px; }
@@ -219,9 +216,9 @@ canvas {
   top: 14px;
   width: 6px;
   height: 22px;
-  background: linear-gradient(180deg, #9c2f45 0 6px, #d24c5f 6px);
+  background: #d24c5f;
+  box-shadow: inset 0 6px 0 #9c2f45; /* the knot */
   border: 2px solid #2a1b2d;
-  border-radius: 0 0 3px 3px;
 }
 
 @keyframes scroll-unroll {
@@ -231,4 +228,440 @@ canvas {
 
 @media (prefers-reduced-motion: reduce) {
   .scroll-panel { animation: none; }
+}
+
+/* ══════════════════════════════════════════════════
+   Game screen + Game Boy shell
+   Desktop: just the 4:3 game screen (the shell decor is hidden).
+   Phones (≤ 820px): a pastel-pink handheld drawn as pixel art — flat colours,
+   4px pixel outlines, stepped corners and hard shadows (no gradients, no
+   blur, nothing rotated) — screen in a plum bezel up top, gamepad below.
+   ══════════════════════════════════════════════════ */
+
+#screen {
+  position: relative; /* thought bubbles & dialogue are positioned against it */
+  width: min(960px, calc(100vw - 32px), calc((100vh - 60px) * 4 / 3));
+  aspect-ratio: 4 / 3;
+}
+
+#gameboy { display: contents; }
+.gb-bezel { display: contents; }
+.gb-bezel-top, .gb-logo, #gamepad { display: none; }
+
+@media (max-width: 820px) {
+  :root {
+    --px: 4px;              /* one "pixel" of the handheld */
+    --gb-ink: #4a2a45;      /* outlines and lettering */
+    --gb-body: #f6c4d4;
+    --gb-body-hi: #fde3ec;  /* lit top edge */
+    --gb-body-lo: #e7a5bc;  /* shaded bottom edge */
+    --gb-bezel: #6b4566;
+    --gb-bezel-hi: #82587c;
+    --gb-dark: #3b2440;
+    --gb-white: #fffaf7;
+    --gb-white-lo: #ecd3dd;
+    --gb-berry: #d2456e;
+    --gb-berry-hi: #f07a9d;
+    --gb-berry-lo: #9c2c50;
+    --gb-press: #f78cb1;
+
+    /* Stepped silhouettes: 2-step notches on three corners and the classic
+       big rounded bottom-right corner as a 4-step staircase. */
+    --gb-notch: 8px;
+    --gb-shape: polygon(
+      0 8px, 4px 8px, 4px 4px, 8px 4px, 8px 0,
+      calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px, calc(100% - 4px) 8px, 100% 8px,
+      100% calc(100% - 48px), calc(100% - 12px) calc(100% - 48px), calc(100% - 12px) calc(100% - 36px),
+      calc(100% - 24px) calc(100% - 36px), calc(100% - 24px) calc(100% - 24px), calc(100% - 36px) calc(100% - 24px),
+      calc(100% - 36px) calc(100% - 12px), calc(100% - 48px) calc(100% - 12px), calc(100% - 48px) 100%,
+      8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px), 0 calc(100% - 8px)
+    );
+    --gb-shape-small: polygon(
+      0 8px, 4px 8px, 4px 4px, 8px 4px, 8px 0,
+      calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px, calc(100% - 4px) 8px, 100% 8px,
+      100% calc(100% - 24px), calc(100% - 8px) calc(100% - 24px), calc(100% - 8px) calc(100% - 16px),
+      calc(100% - 16px) calc(100% - 16px), calc(100% - 16px) calc(100% - 8px), calc(100% - 24px) calc(100% - 8px),
+      calc(100% - 24px) 100%,
+      8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px), 0 calc(100% - 8px)
+    );
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    min-height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    /* the table the handheld sits on: flat pink scattered with pixel petals */
+    background-color: #f8ddea;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' shape-rendering='crispEdges'%3E%3Cg fill='%23fdeef4'%3E%3Crect x='12' y='16' width='4' height='4'/%3E%3Crect x='8' y='20' width='12' height='4'/%3E%3Crect x='12' y='24' width='4' height='4'/%3E%3Crect x='64' y='60' width='4' height='4'/%3E%3Crect x='60' y='64' width='12' height='4'/%3E%3Crect x='64' y='68' width='4' height='4'/%3E%3C/g%3E%3Cg fill='%23f3c2d6'%3E%3Crect x='72' y='12' width='4' height='4'/%3E%3Crect x='24' y='76' width='4' height='4'/%3E%3C/g%3E%3C/svg%3E");
+    image-rendering: pixelated;
+  }
+
+  #app {
+    width: 100%;
+    min-height: 100dvh;
+    justify-content: flex-start;
+    padding:
+      max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+
+  #scene-label { display: none; }
+
+  /* ── The handheld's body: an ink outline layer, then the body colour 4px in ── */
+  #gameboy {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 460px);
+    min-height: calc(100dvh - 20px);
+    padding: 20px 20px 24px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #gameboy::before,
+  #gameboy::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    clip-path: var(--gb-shape);
+  }
+  #gameboy::before { inset: 0; background: var(--gb-ink); }
+  #gameboy::after {
+    inset: var(--px);
+    background: var(--gb-body);
+    /* flat lit top edge and shaded bottom edge */
+    box-shadow: inset 0 var(--px) 0 var(--gb-body-hi), inset 0 calc(var(--px) * -2) 0 var(--gb-body-lo);
+  }
+
+  /* ── Screen bezel, same construction ── */
+  .gb-bezel {
+    position: relative;
+    isolation: isolate;
+    display: block;
+    padding: 12px 18px 22px;
+  }
+  .gb-bezel::before,
+  .gb-bezel::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    clip-path: var(--gb-shape-small);
+  }
+  .gb-bezel::before { inset: 0; background: var(--gb-dark); }
+  .gb-bezel::after {
+    inset: var(--px);
+    background: var(--gb-bezel);
+    box-shadow: inset 0 var(--px) 0 var(--gb-bezel-hi);
+  }
+
+  .gb-bezel-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 16px;
+    margin-bottom: 8px;
+  }
+
+  /* power LED: a square pixel with a flat glow ring */
+  .gb-led {
+    width: 8px;
+    height: 8px;
+    background: #ff6f9c;
+    box-shadow: 0 0 0 2px #ffb3cc;
+    animation: gb-led 3.2s steps(1) infinite;
+  }
+
+  .gb-bezel-label {
+    flex: 1;
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: #f4b6cb;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  #screen {
+    width: 100%;
+    background: #f8ddea;
+    box-shadow: 0 0 0 var(--px) var(--gb-dark);
+  }
+
+  /* ── Logo under the screen ── */
+  .gb-logo {
+    display: block;
+    margin: 14px 4px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gb-ink);
+    letter-spacing: 0.02em;
+    text-shadow: 2px 2px 0 var(--gb-body-hi);
+  }
+  .gb-logo span { margin-left: 6px; font-size: 14px; letter-spacing: 0.1em; text-shadow: none; }
+  .gb-logo b { font-weight: 700; }
+  .gb-logo b:nth-child(1) { color: #d2456e; }
+  .gb-logo b:nth-child(2) { color: #e0802e; }
+  .gb-logo b:nth-child(3) { color: #3fa08a; }
+  .gb-logo b:nth-child(4) { color: #3d78c8; }
+  .gb-logo b:nth-child(5) { color: #7b5bb5; }
+
+  /* ── Gamepad ── */
+  #gamepad {
+    display: grid;
+    flex: 1;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr auto;
+    align-items: center;
+    min-height: 260px;
+    padding: 16px 6px 0;
+    touch-action: none; /* no scrolling or zooming while playing */
+  }
+
+  /* D-pad: a white plus built from five 40px cells. A 4px ink outline and a
+     hard pink drop are drawn around the whole plus with zero-blur shadows. */
+  .gb-dpad {
+    display: grid;
+    grid-template: repeat(3, 40px) / repeat(3, 40px);
+    justify-self: start;
+    margin-left: 8px;
+    filter:
+      drop-shadow(var(--px) 0 0 var(--gb-ink)) drop-shadow(calc(var(--px) * -1) 0 0 var(--gb-ink))
+      drop-shadow(0 var(--px) 0 var(--gb-ink)) drop-shadow(0 calc(var(--px) * -1) 0 var(--gb-ink))
+      drop-shadow(0 var(--px) 0 var(--gb-body-lo));
+    cursor: pointer;
+  }
+  .gb-dpad-arm, .gb-dpad-centre { position: relative; background: var(--gb-white); }
+  .gb-dpad-up    { grid-area: 1 / 2; clip-path: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% 100%, 0 100%); }
+  .gb-dpad-left  { grid-area: 2 / 1; clip-path: polygon(4px 0, 100% 0, 100% 100%, 4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px), 0 4px, 4px 4px); }
+  .gb-dpad-centre { grid-area: 2 / 2; }
+  .gb-dpad-right { grid-area: 2 / 3; clip-path: polygon(0 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 0 100%); }
+  .gb-dpad-down  { grid-area: 3 / 2; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)); }
+
+  /* the centre dimple (the plus itself stays solid flat white) */
+  .gb-dpad-centre::after {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    background: var(--gb-white-lo);
+  }
+
+  /* pixel arrows: a 4px apex pixel plus a 3-pixel row, drawn with box-shadows */
+  .gb-dpad-arm::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    left: calc(50% - 2px);
+    top: calc(50% - 2px);
+    --c: #d8b6c4;
+    background: var(--c);
+  }
+  .gb-dpad-up::after    { margin-top: -2px; box-shadow: -4px 4px 0 var(--c), 0 4px 0 var(--c), 4px 4px 0 var(--c); }
+  .gb-dpad-down::after  { margin-top: 2px;  box-shadow: -4px -4px 0 var(--c), 0 -4px 0 var(--c), 4px -4px 0 var(--c); }
+  .gb-dpad-left::after  { margin-left: -2px; box-shadow: 4px -4px 0 var(--c), 4px 0 0 var(--c), 4px 4px 0 var(--c); }
+  .gb-dpad-right::after { margin-left: 2px;  box-shadow: -4px -4px 0 var(--c), -4px 0 0 var(--c), -4px 4px 0 var(--c); }
+
+  /* pressed: the arm lights up flat pink and its arrow turns white */
+  .gb-dpad[data-pressed~="up"] .gb-dpad-up,
+  .gb-dpad[data-pressed~="down"] .gb-dpad-down,
+  .gb-dpad[data-pressed~="left"] .gb-dpad-left,
+  .gb-dpad[data-pressed~="right"] .gb-dpad-right {
+    background: var(--gb-press);
+    box-shadow: inset 0 var(--px) 0 var(--gb-berry);
+  }
+  .gb-dpad[data-pressed~="up"] .gb-dpad-up::after,
+  .gb-dpad[data-pressed~="down"] .gb-dpad-down::after,
+  .gb-dpad[data-pressed~="left"] .gb-dpad-left::after,
+  .gb-dpad[data-pressed~="right"] .gb-dpad-right::after { --c: var(--gb-white); }
+
+  /* A and B on an exact diagonal: B lower-left, A upper-right, labels
+     centred directly underneath each. */
+  .gb-ab {
+    position: relative;
+    justify-self: end;
+    width: 140px;
+    height: 120px;
+    margin-right: 8px;
+  }
+  .gb-btn {
+    position: absolute;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    touch-action: none;
+  }
+  /* the ring carries the pixel outline + hard berry drop around the stepped
+     circle (kept off the label, so the letter isn't outlined too) */
+  .gb-btn-ring {
+    position: absolute;
+    inset: 0;
+    filter:
+      drop-shadow(var(--px) 0 0 var(--gb-ink)) drop-shadow(calc(var(--px) * -1) 0 0 var(--gb-ink))
+      drop-shadow(0 var(--px) 0 var(--gb-ink)) drop-shadow(0 calc(var(--px) * -1) 0 var(--gb-ink))
+      drop-shadow(0 var(--px) 0 var(--gb-berry-lo));
+  }
+  .gb-btn-b { left: 4px; top: 36px; }
+  .gb-btn-a { left: 80px; top: 4px; }
+  .gb-btn-face {
+    position: absolute;
+    inset: 0;
+    background: var(--gb-berry);
+    box-shadow: inset 0 calc(var(--px) * -2) 0 var(--gb-berry-lo);
+    /* a 7×7 pixel circle */
+    clip-path: polygon(
+      28.57% 0, 71.43% 0, 71.43% 14.29%, 85.71% 14.29%, 85.71% 28.57%, 100% 28.57%,
+      100% 71.43%, 85.71% 71.43%, 85.71% 85.71%, 71.43% 85.71%, 71.43% 100%,
+      28.57% 100%, 28.57% 85.71%, 14.29% 85.71%, 14.29% 71.43%, 0 71.43%,
+      0 28.57%, 14.29% 28.57%, 14.29% 14.29%, 28.57% 14.29%
+    );
+  }
+  /* a square shine pixel, top-left */
+  .gb-btn-face::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: 12px;
+    width: 8px;
+    height: 8px;
+    background: var(--gb-berry-hi);
+  }
+  .gb-btn-label {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 10px);
+    translate: -50% 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gb-ink);
+  }
+  .gb-btn.is-pressed .gb-btn-ring {
+    translate: 0 var(--px);
+    filter:
+      drop-shadow(var(--px) 0 0 var(--gb-ink)) drop-shadow(calc(var(--px) * -1) 0 0 var(--gb-ink))
+      drop-shadow(0 var(--px) 0 var(--gb-ink)) drop-shadow(0 calc(var(--px) * -1) 0 var(--gb-ink));
+  }
+  .gb-btn.is-pressed .gb-btn-face { background: var(--gb-press); }
+
+  /* Select / Start: flat notched pills (decorative) */
+  .gb-pills {
+    grid-column: 1;
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 18px 0 0 56px;
+  }
+  .gb-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--gb-ink);
+  }
+  .gb-pill i {
+    width: 40px;
+    height: 12px;
+    background: #b98aa1;
+    box-shadow: inset 0 calc(var(--px) * -1) 0 #8f6178;
+    clip-path: polygon(4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px), 0 4px, 4px 4px);
+  }
+
+  /* speaker grille: six slots stepped up like a staircase (no rotation) */
+  .gb-speaker {
+    grid-column: 2;
+    justify-self: end;
+    align-self: end;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin: 0 14px 18px 0;
+  }
+  .gb-speaker i {
+    width: 8px;
+    height: 40px;
+    background: var(--gb-body-lo);
+    box-shadow: inset 0 var(--px) 0 #c9809c;
+  }
+  .gb-speaker i:nth-child(2) { margin-bottom: 4px; }
+  .gb-speaker i:nth-child(3) { margin-bottom: 8px; }
+  .gb-speaker i:nth-child(4) { margin-bottom: 12px; }
+  .gb-speaker i:nth-child(5) { margin-bottom: 16px; }
+  .gb-speaker i:nth-child(6) { margin-bottom: 20px; }
+
+  @keyframes gb-led {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gb-led { animation: none; }
+  }
+
+  /* ── Overlays, fitted to the handheld ── */
+
+  /* dialogue docks inside the game screen, like a Game Boy text box */
+  #screen #dialogue-box {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    width: auto;
+    max-width: none;
+    transform: none;
+    translate: none; /* Tailwind v4 centres with `translate`, not `transform` */
+    align-items: flex-end;
+  }
+  #dialogue-box > div:first-child { width: 52px; height: 60px; padding-bottom: 4px; margin-right: -2px; }
+  #dialogue-box img { width: auto !important; height: 50px; }
+  #dialogue-box > div:last-child { padding: 6px 10px; border-width: 3px; box-shadow: 3px 3px 0 #4a3728; }
+  #dialogue-box > div:last-child > p:first-child { font-size: 10px; margin-bottom: 2px; }
+  #dialogue-box > div:last-child > p:nth-child(2) { font-size: 13px; line-height: 1.35; min-height: 2.7em; }
+  #dialogue-box > div:last-child > p:last-child { font-size: 9px; margin-top: 2px; }
+
+  .thought-bubble { max-width: 150px; padding: 4px 7px; font-size: 10px; border-width: 2px; border-radius: 9px; }
+  .thought-bubble::before { width: 8px; height: 8px; border-width: 2px; bottom: -12px; }
+  .thought-bubble::after { width: 5px; height: 5px; border-width: 2px; bottom: -19px; }
+
+  /* panels cover the screen area but leave the gamepad free, so B closes them */
+  .scroll-panel {
+    top: max(10px, env(safe-area-inset-top));
+    left: 10px;
+    right: 10px;
+    bottom: 46dvh;
+    width: auto;
+  }
+  .scroll-paper { padding: 18px 20px; font-size: 0.95rem; margin: 0 12px; }
+
+  #computer-backdrop { bottom: 46dvh; }
+  #computer-panel {
+    top: max(10px, env(safe-area-inset-top));
+    bottom: 46dvh;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    transform: none;
+    translate: none;
+  }
+
+  #welcome-title { font-size: 2.6rem; top: 22%; }
+}
+
+/* thought bubble hanging below the head when there's no room above */
+.thought-bubble.is-below { transform: translate(-30%, 34px) scale(0.85); transform-origin: 30% 0; }
+.thought-bubble.is-below.is-visible { transform: translate(-30%, 38px) scale(1); }
+.thought-bubble.is-flipped.is-below { transform: translate(-70%, 34px) scale(0.85); transform-origin: 70% 0; }
+.thought-bubble.is-flipped.is-below.is-visible { transform: translate(-70%, 38px) scale(1); }
+.thought-bubble.is-below::before { bottom: auto; top: -17px; }
+.thought-bubble.is-below::after { bottom: auto; top: -28px; }
+@media (max-width: 820px) {
+  .thought-bubble.is-below::before { top: -12px; }
+  .thought-bubble.is-below::after { top: -19px; }
 }

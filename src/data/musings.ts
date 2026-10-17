@@ -94,3 +94,9 @@ export const GREETINGS = {
     ],
   },
 } as const;
+
+/** What they say when the visitor ends a chat early with B. */
+export const FAREWELLS = {
+  hannah: ['Enjoy looking around! ♡', 'See you soon!', 'Have fun exploring!'],
+  mitchy: ['Cya.', 'Oh— okay. Bye...', '...Enjoy looking around.'],
+} as const;

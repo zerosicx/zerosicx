@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PlayerController, PLAYER_FEET, type Rect } from '../systems/PlayerController';
+import { onPadButton } from '../systems/Gamepad';
 import { DialogueSystem } from '../systems/DialogueSystem';
 import { loadArticles, Article } from '../data/content-loader';
 import { ArticlePanel } from '../ui/ArticlePanel';
@@ -96,6 +97,12 @@ export class GardenScene extends Phaser.Scene {
 
   async create(data?: { from?: 'bedroom' }) {
     this.articlePanel = new ArticlePanel();
+    // A: read the note at the flower she's standing by in full. B: close the panel.
+    const offA = onPadButton('A', () => {
+      if (this.lastNearArticle) this.articlePanel.show(this.lastNearArticle);
+    });
+    const offB = onPadButton('B', () => this.articlePanel.hide());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offA(); offB(); this.articlePanel.hide(); });
     this.dialogue = new DialogueSystem();
     const label = document.getElementById('scene-label');
     if (label) label.textContent = 'garden';

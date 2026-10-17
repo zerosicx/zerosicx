@@ -1,3 +1,5 @@
+import { isTouchDevice } from './Gamepad';
+
 /** Who's talking: the name above the text and the sprite beside the box. */
 export type Speaker = { name: string; portrait: string };
 
@@ -71,7 +73,9 @@ export class DialogueSystem {
   // ── Private ──────────────────────────────────────────────────────────────────
 
   private createBox() {
-    const app = document.getElementById('app');
+    // Inside #screen: on phones the CSS docks it to the bottom of the game
+    // screen; on desktop it stays fixed to the bottom of the window.
+    const app = document.getElementById('screen') ?? document.getElementById('app');
     if (!app) return;
 
     this.wrapper = document.createElement('div');
@@ -110,7 +114,7 @@ export class DialogueSystem {
 
     const hint = document.createElement('p');
     hint.className = 'text-right text-xs text-[#c2506a] mt-2 animate-pulse';
-    hint.textContent = '\u25BC SPACE to continue';
+    hint.textContent = isTouchDevice() ? '\u25BC A to continue \u00B7 B to leave' : '\u25BC SPACE to continue \u00B7 ESC to leave';
 
     this.box.appendChild(name);
     this.box.appendChild(this.textEl);

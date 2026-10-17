@@ -13,6 +13,10 @@ export class ComputerPanel {
   private escHandler: ((e: KeyboardEvent) => void) | null = null;
   private currentProjects: Project[] = [];
 
+  get isOpen() {
+    return this.panel !== null;
+  }
+
   show(projects: Project[], onClose?: () => void) {
     if (this.panel) return;
     this.onCloseCallback = onClose ?? null;
@@ -21,12 +25,14 @@ export class ComputerPanel {
     if (!app) return;
 
     this.backdrop = document.createElement('div');
+    this.backdrop.id = 'computer-backdrop';
     this.backdrop.className = [
       'fixed', 'inset-0', 'bg-black/50', 'z-50',
     ].join(' ');
     this.backdrop.addEventListener('click', () => this.hide());
 
     this.panel = document.createElement('div');
+    this.panel.id = 'computer-panel';
     this.panel.className = [
       'fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2',
       'w-[640px]', 'max-w-[calc(100%-2rem)]', 'max-h-[520px]',

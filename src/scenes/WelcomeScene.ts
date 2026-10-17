@@ -1,11 +1,14 @@
 import Phaser from 'phaser';
 import { DialogueSystem } from '../systems/DialogueSystem';
+import { isTouchDevice, onPadButton } from '../systems/Gamepad';
 
 const WELCOME_DIALOGUE: string[] = [
   "Oh! A visitor! Hi there \u{1F44B}",
   "Welcome to zerosicx \u2014 my little corner of the internet.",
   "This is my room. Feel free to look around!",
-  "Use the arrow keys to walk, or click somewhere and I'll give you a tour!",
+  isTouchDevice()
+    ? 'Walk with the D-pad, press A to say hi or look at things, and B to back out!'
+    : 'Walk with the arrow keys, press Space to say hi or look at things, and Esc to back out!',
   "Let me know if you find the cat. She's around here somewhere...",
 ];
 
@@ -18,6 +21,7 @@ export class WelcomeScene extends Phaser.Scene {
   private dialogue!: DialogueSystem;
   private lineIndex = 0;
   private titleEl: HTMLElement | null = null;
+  private finished = false;
 
   constructor() {
     super({ key: 'WelcomeScene' });
@@ -42,8 +46,10 @@ export class WelcomeScene extends Phaser.Scene {
     this.dialogue = new DialogueSystem();
     this.dialogue.show(WELCOME_DIALOGUE[0]);
 
-    this.input.keyboard?.on('keydown-SPACE', () => this.advance());
-    this.input.keyboard?.on('keydown-ENTER', () => this.advance());
+    // A (or a tap) reads on; B skips the intro
+    const offA = onPadButton('A', () => this.advance());
+    const offB = onPadButton('B', () => this.finish());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { offA(); offB(); });
     this.input.on('pointerdown', () => this.advance());
   }
 
@@ -61,6 +67,8 @@ export class WelcomeScene extends Phaser.Scene {
   }
 
   private finish() {
+    if (this.finished) return;
+    this.finished = true;
     localStorage.setItem('zerosicx_visited', 'true');
     this.dialogue.hide();
     this.titleEl?.remove();

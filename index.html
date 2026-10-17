@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f8ddea" />
     <title>zerosicx</title>
     <meta name="description" content="Hannah's pixel-art personal world — projects, blog, and a cat." />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -17,6 +18,36 @@
   <body>
     <div id="app">
       <p id="scene-label"></p>
+      <!-- On phones this becomes a pink handheld: the game screen in a bezel up
+           top, the gamepad below. On desktop only #screen shows. -->
+      <main id="gameboy">
+        <div class="gb-bezel">
+          <div class="gb-bezel-top" aria-hidden="true">
+            <span class="gb-led"></span>
+            <span class="gb-bezel-label">&#9825; SAKURA DOT MATRIX &#9825;</span>
+          </div>
+          <div id="screen"></div>
+        </div>
+        <p class="gb-logo" aria-hidden="true">zerosicx<span><b>c</b><b>o</b><b>l</b><b>o</b><b>r</b></span></p>
+        <div id="gamepad" role="group" aria-label="Game controls">
+          <div class="gb-dpad" role="group" aria-label="Move: up, down, left, right">
+            <span class="gb-dpad-arm gb-dpad-up" data-dir="up"></span>
+            <span class="gb-dpad-arm gb-dpad-left" data-dir="left"></span>
+            <span class="gb-dpad-centre"></span>
+            <span class="gb-dpad-arm gb-dpad-right" data-dir="right"></span>
+            <span class="gb-dpad-arm gb-dpad-down" data-dir="down"></span>
+          </div>
+          <div class="gb-ab">
+            <button class="gb-btn gb-btn-b" data-btn="B" aria-label="B: cancel"><span class="gb-btn-ring"><i class="gb-btn-face"></i></span><span class="gb-btn-label">B</span></button>
+            <button class="gb-btn gb-btn-a" data-btn="A" aria-label="A: talk or interact"><span class="gb-btn-ring"><i class="gb-btn-face"></i></span><span class="gb-btn-label">A</span></button>
+          </div>
+          <div class="gb-pills" aria-hidden="true">
+            <span class="gb-pill"><i></i>SELECT</span>
+            <span class="gb-pill"><i></i>START</span>
+          </div>
+          <div class="gb-speaker" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+      </main>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { StrideAnimator } from './StrideAnimator';
+import { padDirections } from './Gamepad';
 
 const SPEED = 90;          // px per second at full walking pace
 const ACCEL_MS = 90;       // time to ease from standing to full pace
@@ -76,11 +77,12 @@ export class PlayerController {
 
   update(delta = 1000 / 60) {
     const { left, right, up, down } = this.cursors;
+    // arrow keys, WASD, or the on-screen D-pad
     const held = {
-      left: left.isDown || this.wasd.left.isDown,
-      right: right.isDown || this.wasd.right.isDown,
-      up: up.isDown || this.wasd.up.isDown,
-      down: down.isDown || this.wasd.down.isDown,
+      left: left.isDown || this.wasd.left.isDown || padDirections.left,
+      right: right.isDown || this.wasd.right.isDown || padDirections.right,
+      up: up.isDown || this.wasd.up.isDown || padDirections.up,
+      down: down.isDown || this.wasd.down.isDown || padDirections.down,
     };
     const dx = (held.right ? 1 : 0) - (held.left ? 1 : 0);
     const dy = (held.down ? 1 : 0) - (held.up ? 1 : 0);

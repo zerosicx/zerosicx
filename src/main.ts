@@ -4,13 +4,18 @@ import { BootScene } from './scenes/BootScene';
 import { WelcomeScene } from './scenes/WelcomeScene';
 import { BedroomScene } from './scenes/BedroomScene';
 import { GardenScene } from './scenes/GardenScene';
+import { mountGamepad } from './systems/Gamepad';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  parent: 'app',
-  width: 320,
-  height: 240,
-  zoom: 3,           // scales 320x240 → 960x720 (crisp pixel art)
+  parent: 'screen',
+  // 320×240, scaled to fill #screen: 960×720 on desktop, the Game Boy screen on phones
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: 320,
+    height: 240,
+  },
   pixelArt: true,    // disables anti-aliasing on all textures
   antialias: false,
   roundPixels: true,
@@ -25,6 +30,7 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, WelcomeScene, BedroomScene, GardenScene],
 };
 
+mountGamepad();
 const game = new Phaser.Game(config);
 
 // Dev-only handle for debugging from the console, e.g. game.scene.start('GardenScene')
